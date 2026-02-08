@@ -198,51 +198,116 @@ class _HomePageState extends State<HomePage> {
   Widget _buildMaimaiContent() {
     return _buildLogoContent(
       logoPath: AppAssets.logoMaimai,
-      child: TransferModeCard(
-        baseColor: Colors.white.withOpacity(0.95),
-        borderColor: Colors.white.withOpacity(0.6),
-        shadowColor: GameThemeConfig.maimai.shadowColor.withOpacity(0.1),
-        containerColor: GameThemeConfig.maimai.containerColor,
-        activeColor: GameThemeConfig.maimai.primaryColor,
-        gradientColor: GameThemeConfig.maimai.gradientStart,
-        mode: _maimaiTransferMode,
-        onModeChanged: (val) => setState(() => _maimaiTransferMode = val),
-        gameType: 0,
-      ),
+      subtitle: 'MaiMai DX Prober',
+      themeColor: GameThemeConfig.maimai.primaryColor,
+      child: _buildMaimaiTransferCard(),
     );
   }
 
   Widget _buildChunithmContent() {
     return _buildLogoContent(
       logoPath: AppAssets.logoChunithm,
-      child: TransferModeCard(
-        baseColor: Colors.white.withOpacity(0.95),
-        borderColor: Colors.white.withOpacity(0.6),
-        shadowColor: GameThemeConfig.chunithm.shadowColor.withOpacity(0.1),
-        containerColor: GameThemeConfig.chunithm.containerColor,
-        activeColor: GameThemeConfig.chunithm.primaryColor,
-        gradientColor: GameThemeConfig.chunithm.gradientStart,
-        mode: _chunithmTransferMode,
-        onModeChanged: (val) => setState(() => _chunithmTransferMode = val),
-        gameType: 1,
-      ),
+      subtitle: 'CHUNITHM Prober',
+      themeColor: GameThemeConfig.chunithm.primaryColor,
+      child: _buildChunithmTransferCard(),
     );
   }
 
-  Widget _buildLogoContent({required String logoPath, Widget? child}) {
+  Widget _buildMaimaiTransferCard() {
+    return TransferModeCard(
+      baseColor: Colors.white.withOpacity(0.95),
+      borderColor: Colors.white.withOpacity(0.6),
+      shadowColor: GameThemeConfig.maimai.shadowColor.withOpacity(0.1),
+      containerColor: GameThemeConfig.maimai.containerColor,
+      activeColor: GameThemeConfig.maimai.primaryColor,
+      gradientColor: GameThemeConfig.maimai.gradientStart,
+      mode: _maimaiTransferMode,
+      onModeChanged: (val) => setState(() => _maimaiTransferMode = val),
+      gameType: 0,
+    );
+  }
+
+  Widget _buildChunithmTransferCard() {
+    return TransferModeCard(
+      baseColor: Colors.white.withOpacity(0.95),
+      borderColor: Colors.white.withOpacity(0.6),
+      shadowColor: GameThemeConfig.chunithm.shadowColor.withOpacity(0.1),
+      containerColor: GameThemeConfig.chunithm.containerColor,
+      activeColor: GameThemeConfig.chunithm.primaryColor,
+      gradientColor: GameThemeConfig.chunithm.gradientStart,
+      mode: _chunithmTransferMode,
+      onModeChanged: (val) => setState(() => _chunithmTransferMode = val),
+      gameType: 1,
+    );
+  }
+
+  Widget _buildLogoContent({
+    required String logoPath,
+    required String subtitle,
+    required Color themeColor,
+    Widget? child,
+  }) {
     final size = MediaQuery.of(context).size;
+
+    // The Glass Card starts at 5% height.
+    // We want the content to start inside the card with some padding.
+    final double cardTopStart = size.height * 0.05;
+    const double internalPadding = 7.0;
+
+    // Config: Position logic
+    // The Indicator is fixed at [CardTop + 100] and has height 20.
+    // So Indicator Bottom is at [CardTop + 120].
+    // We want the Card to start closer now.
+    // Original base was 44.0, reducing by ~1/3 -> 30.0
+
+    double gapHeight = 30.0 - internalPadding;
+    if (gapHeight < 0) gapHeight = 0;
+
     return Padding(
       padding: EdgeInsets.only(
-        top: size.height * 0.05,
+        top:
+            cardTopStart +
+            internalPadding, // Align with card + internal spacing
         left: size.width * 0.05,
         right: size.width * 0.05,
         bottom: 0,
       ),
       child: Column(
         children: [
-          const SizedBox(height: 24),
-          Image.asset(logoPath, height: 60, fit: BoxFit.contain),
-          if (child != null) ...[const SizedBox(height: 50), child],
+          // Logo Area with Watermark
+          SizedBox(
+            height: 100,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Watermark Text (Behind)
+                Positioned(
+                  top: 32,
+                  child: Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontFamily: 'GameFont',
+                      fontSize: 34,
+                      fontWeight: FontWeight.normal,
+                      color: themeColor.withOpacity(0.2),
+                      letterSpacing: -1.0,
+                    ),
+                  ),
+                ),
+                // Logo Image (In Front)
+                Align(
+                  alignment: Alignment.center,
+                  child: Image.asset(logoPath, height: 80, fit: BoxFit.contain),
+                ),
+              ],
+            ),
+          ),
+
+          if (child != null) ...[
+            // Dynamic spacer to keep Card fixed relative to Indicator
+            SizedBox(height: gapHeight),
+            child,
+          ],
         ],
       ),
     );

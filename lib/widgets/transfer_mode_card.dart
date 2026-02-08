@@ -53,18 +53,6 @@ class _TransferModeCardState extends State<TransferModeCard> {
 
         // Listen for side effects (SnackBar)
         // Note: Ideally side effects are handled by a listener, but checks during build are okay for simple UI switches
-        if (provider.errorMessage != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(provider.errorMessage!),
-                backgroundColor: Colors.red,
-              ),
-            );
-            // Clear error immediately to avoid loop
-            // provider.resetVerification(); // Careful with loop here, better handled in simple listener or separate method
-          });
-        }
 
         return Container(
           width: double.infinity,
@@ -218,7 +206,13 @@ class _TransferModeCardState extends State<TransferModeCard> {
                     bool success = await provider.verifyAndSave(
                       mode: widget.mode,
                     );
-                    if (success && mounted) {
+
+                    if (!mounted) return;
+
+                    // Clear any existing SnackBars immediately so new ones show up instantly
+                    ScaffoldMessenger.of(context).clearSnackBars();
+
+                    if (success) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(provider.successMessage ?? '验证通过'),
@@ -226,11 +220,12 @@ class _TransferModeCardState extends State<TransferModeCard> {
                           duration: const Duration(seconds: 1),
                         ),
                       );
-                    } else if (provider.errorMessage != null && mounted) {
+                    } else if (provider.errorMessage != null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(provider.errorMessage!),
                           backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 3),
                         ),
                       );
                     }
@@ -277,10 +272,7 @@ class _TransferModeCardState extends State<TransferModeCard> {
     return GestureDetector(
       onTap: () async {
         if (!hasContent) {
-          final data = await Clipboard.getData(Clipboard.kTextPlain);
-          if (data?.text?.isNotEmpty ?? false) {
-            provider.handlePaste(data!.text!, isDf: isDf);
-          }
+          await _handlePasteWithConfirmation(context, provider, isDf);
         }
       },
       child: Container(
@@ -342,10 +334,7 @@ class _TransferModeCardState extends State<TransferModeCard> {
                   size: 20,
                 ),
                 onPressed: () async {
-                  final data = await Clipboard.getData(Clipboard.kTextPlain);
-                  if (data?.text?.isNotEmpty ?? false) {
-                    provider.handlePaste(data!.text!, isDf: isDf);
-                  }
+                  await _handlePasteWithConfirmation(context, provider, isDf);
                 },
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
@@ -353,6 +342,42 @@ class _TransferModeCardState extends State<TransferModeCard> {
         ),
       ),
     );
+  }
+
+  Future<void> _handlePasteWithConfirmation(
+    BuildContext context,
+    TransferProvider provider,
+    bool isDf,
+  ) async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text;
+    if (text != null && text.isNotEmpty) {
+      if (!context.mounted) return;
+
+      final shouldPaste = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('检测到剪贴板内容'),
+          content: Text(
+            '是否粘贴以下内容？\n\n"${text.length > 20 ? "${text.substring(0, 20)}..." : text}"',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('粘贴'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldPaste == true) {
+        provider.handlePaste(text, isDf: isDf);
+      }
+    }
   }
 
   Widget _buildModeTab(int index, String text) {
