@@ -2,17 +2,17 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../kit/foundation/app_assets.dart';
-import '../../kit/foundation/game_theme.dart';
+import '../../design_system/constants/assets.dart';
 
 import '../../../kernel/state/game_provider.dart';
 import '../../../kernel/di/injection.dart';
 
 // Components
 import '../transfer/widgets/transfer_mode_card.dart';
-import '../../kit/components/background/maimai_background.dart';
-import '../../kit/components/background/chunithm_background.dart';
-import '../../kit/components/atoms/sticky_dot_indicator.dart';
+
+import '../../design_system/visual_skins/implementations/maimai_dx/circle_background.dart';
+import '../../design_system/visual_skins/implementations/chunithm/verse_background.dart';
+import '../../design_system/kit_shared/sticky_dot_indicator.dart';
 
 // Pages
 import '../settings/settings_page.dart';
@@ -89,8 +89,8 @@ class _HomePageState extends State<HomePage> {
                       ? (pageController.page ?? 0)
                       : 0;
                   final Color activeColor = Color.lerp(
-                    GameTheme.maimai.transferCardActiveColor,
-                    GameTheme.chunithm.transferCardActiveColor,
+                    MaimaiSkin().medium,
+                    ChunithmSkin().medium,
                     page.clamp(0.0, 1.0),
                   )!;
 
@@ -143,12 +143,12 @@ class _HomePageState extends State<HomePage> {
           fit: StackFit.expand,
           children: [
             // Maimai is base
-            const MaimaiBackground(),
+            MaimaiSkin().buildBackground(context),
             // Chunithm fades in on top
             IgnorePointer(
               child: Opacity(
                 opacity: page.clamp(0.0, 1.0),
-                child: const ChunithmBackground(),
+                child: ChunithmSkin().buildBackground(context),
               ),
             ),
           ],
@@ -199,7 +199,7 @@ class _HomePageState extends State<HomePage> {
     return _buildLogoContent(
       logoPath: AppAssets.logoMaimai,
       subtitle: 'MaiMai DX Prober',
-      themeColor: GameTheme.maimai.transferCardActiveColor,
+      themeColor: MaimaiSkin().medium,
       child: _buildMaimaiTransferCard(),
     );
   }
@@ -208,14 +208,18 @@ class _HomePageState extends State<HomePage> {
     return _buildLogoContent(
       logoPath: AppAssets.logoChunithm,
       subtitle: 'CHUNITHM Prober',
-      themeColor: GameTheme.chunithm.transferCardActiveColor,
+      themeColor: ChunithmSkin().medium,
       child: _buildChunithmTransferCard(),
     );
   }
 
   Widget _buildMaimaiTransferCard() {
     return Theme(
-      data: Theme.of(context).copyWith(extensions: [GameTheme.maimai]),
+      data: Theme.of(context).copyWith(
+        extensions: [
+          MaimaiSkin(), // New system
+        ],
+      ),
       child: TransferModeCard(
         mode: _maimaiTransferMode,
         onModeChanged: (val) => setState(() => _maimaiTransferMode = val),
@@ -226,7 +230,11 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildChunithmTransferCard() {
     return Theme(
-      data: Theme.of(context).copyWith(extensions: [GameTheme.chunithm]),
+      data: Theme.of(context).copyWith(
+        extensions: [
+          ChunithmSkin(), // New system
+        ],
+      ),
       child: TransferModeCard(
         mode: _chunithmTransferMode,
         onModeChanged: (val) => setState(() => _chunithmTransferMode = val),

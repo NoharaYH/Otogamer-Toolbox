@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/sizes.dart';
 
 class TransferContentAnimator extends StatefulWidget {
   final Widget child;
@@ -24,7 +25,7 @@ class _TransferContentAnimatorState extends State<TransferContentAnimator>
   // We need to keep the "old" child visible during fade out
   // But actually, we want the CURRENT child to fade out, THEN switch, THEN fade in.
 
-  bool _isTransitioning = false;
+  int _currentOperationId = 0;
 
   @override
   void initState() {
@@ -44,37 +45,44 @@ class _TransferContentAnimatorState extends State<TransferContentAnimator>
   @override
   void didUpdateWidget(covariant TransferContentAnimator oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Trigger transition if the child key changes (e.g. from InputView to SuccessView)
-    if (widget.child.key != oldWidget.child.key && !_isTransitioning) {
+    // Trigger transition only if the child key changes (e.g. switching tabs)
+    if (widget.child.key != oldWidget.child.key) {
       _triggerTransition(widget.child);
+    } else {
+      // FIX: If key is the same (e.g. loading state changed), update content immediately
+      // This ensures visual updates within the same page are not ignored.
+      _currentChild = widget.child;
     }
   }
 
   Future<void> _triggerTransition(Widget nextChild) async {
     if (!mounted) return;
-    setState(() => _isTransitioning = true);
+
+    // Increment operation ID to identify this specific transition request
+    final int opId = ++_currentOperationId;
 
     // 1. FADE OUT
+    // If controller is already reversing, this just joins the ride.
+    // If it was forwarding, it reverses from current point.
     await _controller.reverse();
 
-    if (!mounted) return;
+    // Check if this operation is still the latest one
+    if (!mounted || opId != _currentOperationId) return;
 
-    // 2. CHANGE CHILD (and thus SIZE)
+    // 2. CHANGE CHILD
     setState(() {
       _currentChild = widget.child;
     });
 
     // 3. WAIT FOR RESIZE
-    // AnimatedSize will see the new child and animate its size.
-    // We wait for that animation duration plus a small buffer.
     await Future.delayed(widget.duration);
 
-    if (!mounted) return;
+    if (!mounted || opId != _currentOperationId) return;
 
     // 4. FADE IN
     await _controller.forward();
 
-    if (mounted) setState(() => _isTransitioning = false);
+    // Only clear transitioning flag if we are still the latest operation
   }
 
   @override
@@ -93,7 +101,9 @@ class _TransferContentAnimatorState extends State<TransferContentAnimator>
         opacity: _opacityAnimation,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(
+            horizontal: UiSizes.cardInnerPadding,
+          ),
           // We wrap _currentChild to ensure layout constraints are passed down
           // Key is crucial for framework to differentiate widgets if needed,
           // but here we rely on _currentChild's internal key.

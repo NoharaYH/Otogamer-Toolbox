@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum ToastType { info, success, error }
+enum ToastType { verifying, confirmed, error }
 
 class ToastItem {
   final String id;

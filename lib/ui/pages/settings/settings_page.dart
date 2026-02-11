@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../design_system/kit_shared/confirm_button.dart';
 import '../../../kernel/services/storage_service.dart';
 import '../../../kernel/di/injection.dart';
 
@@ -13,6 +14,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final _dfTokenController = TextEditingController();
   final _lxnsTokenController = TextEditingController();
   bool _isLoading = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -38,6 +40,11 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _saveSettings() async {
+    setState(() => _isSaving = true);
+
+    // 增加感知延迟
+    await Future.delayed(const Duration(milliseconds: 600));
+
     await getIt<StorageService>().save(
       StorageService.kDivingFishToken,
       _dfTokenController.text,
@@ -48,6 +55,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     if (mounted) {
+      setState(() => _isSaving = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('设置已保存')));
@@ -88,13 +96,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
 
                 const SizedBox(height: 40),
-                FilledButton.icon(
+                ConfirmButton(
+                  text: '保存配置',
+                  icon: Icons.save,
+                  state: _isSaving
+                      ? ConfirmButtonState.loading
+                      : ConfirmButtonState.ready,
                   onPressed: _saveSettings,
-                  icon: const Icon(Icons.save),
-                  label: const Text('保存配置'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                  ),
                 ),
               ],
             ),

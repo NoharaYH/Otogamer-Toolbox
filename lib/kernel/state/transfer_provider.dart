@@ -14,6 +14,7 @@ class TransferProvider extends ChangeNotifier {
 
   // Observable State
   bool _isLoading = false;
+  bool _isStorageLoaded = false; // New state for initial load
   bool _isDivingFishVerified = false;
   bool _isLxnsVerified = false;
   String? _errorMessage;
@@ -21,6 +22,7 @@ class TransferProvider extends ChangeNotifier {
 
   // Getters
   bool get isLoading => _isLoading;
+  bool get isStorageLoaded => _isStorageLoaded;
   bool get isDivingFishVerified => _isDivingFishVerified;
   bool get isLxnsVerified => _isLxnsVerified;
   String? get errorMessage => _errorMessage;
@@ -42,6 +44,10 @@ class TransferProvider extends ChangeNotifier {
   }
 
   Future<void> _loadTokens() async {
+    // Artificial delay to ensure the UI has time to render the initial "collapsed" state
+    // and then play the expansion animation.
+    await Future.delayed(const Duration(milliseconds: 300));
+
     final df = await _storageService.read(StorageService.kDivingFishToken);
     final lxns = await _storageService.read(StorageService.kLxnsToken);
 
@@ -55,6 +61,8 @@ class TransferProvider extends ChangeNotifier {
       lxnsController.text = lxns;
       _isLxnsVerified = true;
     }
+
+    _isStorageLoaded = true;
     notifyListeners();
   }
 
@@ -91,6 +99,9 @@ class TransferProvider extends ChangeNotifier {
     _errorMessage = null;
     _successMessage = null;
     notifyListeners();
+
+    // 强制最小加载时间 (500ms)，确保 loading 动画能被肉眼捕捉，提供良好反馈
+    await Future.delayed(const Duration(milliseconds: 500));
 
     final needsDf = mode == 0 || mode == 1;
     final needsLxns = mode == 2 || mode == 1;

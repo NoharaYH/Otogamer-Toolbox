@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import '../config/game_config.dart';
 
 class GameProvider extends ChangeNotifier {
   int _currentIndex = 0;
   final PageController pageController = PageController();
 
   int get currentIndex => _currentIndex;
-  GameThemeConfig get currentTheme => GameThemeConfig.all[_currentIndex];
 
   void setIndex(int index) {
     if (_currentIndex != index) {
-      _currentIndex = index.clamp(0, GameThemeConfig.all.length - 1);
+      _currentIndex = index.clamp(0, 1);
       notifyListeners();
     }
   }

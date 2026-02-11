@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
-import '../../foundation/app_assets.dart';
+import '../../skin_extension.dart';
+import '../../../constants/assets.dart';
 
-class ChunithmBackground extends StatelessWidget {
-  const ChunithmBackground({super.key});
+/// 中二节奏 - Verse Town 主题皮肤
+class ChunithmSkin extends SkinExtension {
+  ChunithmSkin();
+
+  // ==================== 主题色定义 ====================
 
   @override
-  Widget build(BuildContext context) {
+  Color get light => const Color.fromARGB(255, 165, 208, 255); // 浅蓝 - 渐变起始
+
+  @override
+  Color get medium => const Color.fromARGB(255, 111, 140, 255); // 金黄 - 按钮/激活态
+
+  @override
+  Color get dark => const Color.fromARGB(255, 0, 98, 255); // 深蓝 - 边框/阴影
+
+  // ==================== 背景渲染 ====================
+
+  @override
+  Widget buildBackground(BuildContext context) {
     const double designWidth = 393.0;
 
     return LayoutBuilder(
@@ -50,5 +65,18 @@ class ChunithmBackground extends StatelessWidget {
         );
       },
     );
+  }
+
+  // ==================== ThemeExtension 必需方法 ====================
+
+  @override
+  SkinExtension copyWith({Color? light, Color? medium, Color? dark}) {
+    return ChunithmSkin();
+  }
+
+  @override
+  SkinExtension lerp(ThemeExtension<SkinExtension>? other, double t) {
+    if (other is! ChunithmSkin) return this;
+    return this;
   }
 }

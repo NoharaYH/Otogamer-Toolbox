@@ -5,7 +5,8 @@ import 'ui/pages/home/home_page.dart';
 import 'kernel/state/game_provider.dart';
 import 'kernel/state/transfer_provider.dart';
 import 'kernel/state/toast_provider.dart';
-import 'ui/kit/components/molecules/toast/toast_manager.dart';
+
+import 'ui/design_system/kit_shared/toast_queue_manager.dart';
 
 void main() {
   configureDependencies();

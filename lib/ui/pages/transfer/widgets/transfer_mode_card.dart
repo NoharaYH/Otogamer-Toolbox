@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../kernel/state/transfer_provider.dart';
 import '../../../../kernel/state/toast_provider.dart';
-import '../../../../ui/kit/foundation/game_theme.dart';
-import '../../../../ui/kit/foundation/ui_config.dart';
-import '../../../kit/components/molecules/transfer_content_animator.dart'; // Correct relative path
+
+import '../../../../ui/design_system/visual_skins/skin_extension.dart';
+import '../../../../ui/design_system/visual_skins/implementations/maimai_dx/circle_background.dart';
+import '../../../../ui/design_system/constants/sizes.dart';
+import '../../../../ui/design_system/kit_score_sync/content_animator.dart';
+import '../../../../ui/design_system/kit_shared/confirm_button.dart';
 import 'transfer_page_maimaidx.dart';
 import 'transfer_page_chunithm.dart';
 
@@ -27,63 +30,31 @@ class TransferModeCard extends StatefulWidget {
   State<TransferModeCard> createState() => _TransferModeCardState();
 }
 
-class _TransferModeCardState extends State<TransferModeCard>
-    with SingleTickerProviderStateMixin {
+class _TransferModeCardState extends State<TransferModeCard> {
   // Local UI state for visibility toggles
   bool _showDfToken = false;
   bool _showLxnsToken = false;
 
-  // Animation for Staggered Effect
-  late final AnimationController _staggerController;
-  late final Animation<double> _tabOpacity;
-
   @override
   void initState() {
     super.initState();
-    _staggerController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-
-    // Tab fades out slower, comes back later
-    _tabOpacity = CurvedAnimation(
-      parent: _staggerController,
-      curve: const Interval(
-        0.0,
-        1.0,
-        curve: Curves.easeIn,
-      ), // Simple linear verify first
-    );
-    _staggerController.forward();
   }
 
   @override
   void didUpdateWidget(TransferModeCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.mode != widget.mode) {
-      // Bug 1 Fix: Reset verification on mode switch
-      // We need to do this asynchronously to avoid build conflicts or do it in the callback in parent.
-      // Ideally parent calls it, but here we can force it via provider access if we have context.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<TransferProvider>().resetAllVerification();
-      });
-
-      // Bug 3 Fix: Trigger Re-entry animation
-      _staggerController.reset();
-      _staggerController.forward();
-    }
+    // Removed automatic verification reset on mode switch to persist state
   }
 
   @override
   void dispose() {
-    _staggerController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     // Access theme via ThemeExtension
-    final theme = Theme.of(context).extension<GameTheme>() ?? GameTheme.maimai;
+    final skin = Theme.of(context).extension<SkinExtension>() ?? MaimaiSkin();
 
     return Consumer<TransferProvider>(
       builder: (context, provider, child) {
@@ -96,56 +67,57 @@ class _TransferModeCardState extends State<TransferModeCard>
         final bool isLxnsReady = !needsLxns || provider.isLxnsVerified;
         final bool showSuccessPage = isDfReady && isLxnsReady;
 
+        // ANIMATION CONTROL:
+        // If storage hasn't loaded (startup), show an empty container.
+        // This creates the "collapsed" state initially.
+        // When loaded, the child changes to Input/Success view, triggering the animator.
+        final Widget content = !provider.isStorageLoaded
+            ? const SizedBox(width: double.infinity) // Collapsed state
+            : (showSuccessPage
+                  ? _buildSuccessView(provider, skin)
+                  : _buildInputView(provider, needsDf, needsLxns, skin));
+
         return Container(
           width: double.infinity,
           margin: const EdgeInsets.symmetric(
-            horizontal: UiConfig.defaultPadding,
+            horizontal: UiSizes.defaultPadding,
           ),
           decoration: BoxDecoration(
-            color: theme.transferCardBaseColor,
-            borderRadius: theme.mainBorderRadius,
-            border: Border.all(
-              color: theme.transferCardBorderColor,
-              width: 1.5,
-            ),
+            color: const Color(0xCCFFFFFF),
+            borderRadius: BorderRadius.circular(UiSizes.cardBorderRadius),
             boxShadow: [
               BoxShadow(
-                color: theme.transferCardShadowColor,
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Tab Selector with Staggered Animation
-              FadeTransition(
-                opacity: _tabOpacity,
-                child: Container(
-                  height: 50,
-                  margin: const EdgeInsets.all(12),
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: theme.transferCardContainerColor,
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: Row(
-                    children: [
-                      _buildModeTab(0, '水鱼', theme),
-                      _buildModeTab(1, '双平台', theme),
-                      _buildModeTab(2, '落雪', theme),
-                    ],
-                  ),
+              // Tab Selector
+              Container(
+                height: 50,
+                margin: const EdgeInsets.all(UiSizes.cardInnerPadding),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: skin.medium.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Row(
+                  children: [
+                    _buildModeTab(0, '水鱼', skin),
+                    _buildModeTab(1, '双平台', skin),
+                    _buildModeTab(2, '落雪', skin),
+                  ],
                 ),
               ),
 
               // Content Area
               TransferContentAnimator(
-                duration: UiConfig.defaultAnimationDuration,
-                child: showSuccessPage
-                    ? _buildSuccessView(provider, theme)
-                    : _buildInputView(provider, needsDf, needsLxns, theme),
+                duration: UiSizes.defaultAnimationDuration,
+                child: content,
               ),
             ],
           ),
@@ -154,7 +126,7 @@ class _TransferModeCardState extends State<TransferModeCard>
     );
   }
 
-  Widget _buildSuccessView(TransferProvider provider, GameTheme theme) {
+  Widget _buildSuccessView(TransferProvider provider, SkinExtension skin) {
     return Column(
       key: ValueKey<String>('Success_${widget.gameType}'),
       children: [
@@ -171,26 +143,16 @@ class _TransferModeCardState extends State<TransferModeCard>
                   color: Colors.grey[800],
                 ),
               ),
-              SizedBox(
-                height: 28,
-                child: ElevatedButton(
-                  onPressed: () {
-                    provider.resetVerification(df: true, lxns: true);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.transferCardActiveColor,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                  ),
-                  child: const Text(
-                    "返回token填写",
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
+              ConfirmButton(
+                text: "返回token填写",
+                fontSize: 12,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
                 ),
+                onPressed: () {
+                  provider.resetVerification(df: true, lxns: true);
+                },
               ),
             ],
           ),
@@ -202,8 +164,8 @@ class _TransferModeCardState extends State<TransferModeCard>
             margin: const EdgeInsets.fromLTRB(4, 0, 4, 10),
           ),
         widget.gameType == 0
-            ? TransferPageMaimaiDx(activeColor: theme.transferCardActiveColor)
-            : const TransferPageChunithm(),
+            ? TransferPageMaimaiDx(activeColor: skin.medium)
+            : TransferPageChunithm(activeColor: skin.medium),
       ],
     );
   }
@@ -212,7 +174,7 @@ class _TransferModeCardState extends State<TransferModeCard>
     TransferProvider provider,
     bool needsDf,
     bool needsLxns,
-    GameTheme theme,
+    SkinExtension skin,
   ) {
     return Column(
       key: ValueKey<int>(widget.mode),
@@ -237,56 +199,64 @@ class _TransferModeCardState extends State<TransferModeCard>
             provider: provider,
           ),
         const SizedBox(height: 4),
-        SizedBox(
-          width: double.infinity,
-          height: UiConfig.inputFieldHeight,
-          child: ElevatedButton(
-            onPressed: provider.isLoading
-                ? null
-                : () async {
-                    bool success = await provider.verifyAndSave(
-                      mode: widget.mode,
-                    );
+        ConfirmButton(
+          text: '验证并保存Token',
+          state: provider.isLoading
+              ? ConfirmButtonState.loading
+              : ConfirmButtonState.ready,
+          onPressed: () async {
+            // 1. 获取当前输入内容（去除首尾空格）
+            final dfToken = provider.dfController.text.trim();
+            final lxnsToken = provider.lxnsController.text.trim();
 
-                    if (!mounted) return;
+            // 2. 预检查：根据当前模式判断是否为空
+            //    如果为空，直接提示错误，不触发 loading，不调用 Provider
+            bool isInputEmpty = false;
+            String? emptyErrorMsg;
 
-                    // Replaces native SnackBar with Custom GameToast
-                    if (success) {
-                      context.read<ToastProvider>().show(
-                        provider.successMessage ?? '验证通过',
-                        ToastType.success,
-                      );
-                    } else if (provider.errorMessage != null) {
-                      context.read<ToastProvider>().show(
-                        provider.errorMessage!,
-                        ToastType.error,
-                      );
-                    }
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.transferCardActiveColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  UiConfig.buttonBorderRadius,
-                ),
-              ),
-            ),
-            child: provider.isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Text(
-                    '验证并保存Token',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-          ),
+            final needsDf = widget.mode == 0 || widget.mode == 1;
+            final needsLxns = widget.mode == 2 || widget.mode == 1;
+
+            if (needsDf && dfToken.isEmpty) {
+              isInputEmpty = true;
+              emptyErrorMsg = '请输入水鱼查分Token';
+            } else if (needsLxns && lxnsToken.isEmpty) {
+              isInputEmpty = true;
+              emptyErrorMsg = '请输入落雪API密钥';
+            }
+
+            // 分支 A：输入为空 -> 仅提示，不加载
+            if (isInputEmpty) {
+              context.read<ToastProvider>().show(
+                emptyErrorMsg ?? '请输入Token',
+                ToastType.error,
+              );
+              return;
+            }
+
+            // 分支 B：输入有效 -> 触发加载 -> 调用 Provider 验证
+            // 注意：Provider 内部即将设置 isLoading = true，UI 会自动重建为 Loading 状态
+            context.read<ToastProvider>().show('验证中', ToastType.verifying);
+
+            // 执行验证（等待 Provider 完成）
+            // Provider 的 verifyAndSave 方法内会处理 isLoading 的 true/false 切换
+            final success = await provider.verifyAndSave(mode: widget.mode);
+
+            if (!mounted) return;
+
+            // 验证完成后的反馈
+            if (success) {
+              context.read<ToastProvider>().show(
+                provider.successMessage ?? '验证通过',
+                ToastType.confirmed,
+              );
+            } else if (provider.errorMessage != null) {
+              context.read<ToastProvider>().show(
+                provider.errorMessage!,
+                ToastType.error,
+              );
+            }
+          },
         ),
         const SizedBox(height: 20),
       ],
@@ -415,42 +385,46 @@ class _TransferModeCardState extends State<TransferModeCard>
     }
   }
 
-  Widget _buildModeTab(int index, String text, GameTheme theme) {
+  Widget _buildModeTab(int index, String text, SkinExtension skin) {
     final isSelected = widget.mode == index;
     return Expanded(
       child: GestureDetector(
         onTap: () => widget.onModeChanged(index),
-        child: AnimatedContainer(
-          duration: UiConfig.shortAnimationDuration,
-          alignment: Alignment.center,
+        child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            gradient: isSelected
-                ? LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.white, theme.transferCardGradientColor],
-                  )
-                : null,
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Text(
-            text,
-            style: TextStyle(
-              color: isSelected ? theme.transferCardActiveColor : Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // 背景层 - 平滑过渡，无淡入淡出
+              AnimatedContainer(
+                duration: UiSizes.shortAnimationDuration,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : [],
+                ),
+              ),
+              // 文字层 - 颜色平滑过渡
+              Center(
+                child: AnimatedDefaultTextStyle(
+                  duration: UiSizes.shortAnimationDuration,
+                  style: TextStyle(
+                    color: isSelected ? skin.medium : Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  child: Text(text),
+                ),
+              ),
+            ],
           ),
         ),
       ),
