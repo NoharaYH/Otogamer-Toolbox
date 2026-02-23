@@ -1,0 +1,21 @@
+Analyzing Otogamer-Toolbox...                                   
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\design_system\kit_shared\confirm_button.dart:94:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\design_system\kit_shared\sticky_dot_indicator.dart:43:44 - deprecated_member_use
+   info - The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\ui\design_system\kit_shared\toast_card.dart:1:8 - unnecessary_import
+warning - The value of the local variable 'themeColor' isn't used - lib\ui\design_system\kit_shared\toast_card.dart:16:17 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\design_system\kit_shared\toast_card.dart:36:36 - deprecated_member_use
+   info - The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\ui\design_system\kit_shared\toast_queue_manager.dart:2:8 - unnecessary_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\design_system\page_shell.dart:43:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\pages\home\home_page.dart:164:50 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\pages\home\home_page.dart:257:41 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\ui\pages\login\login_web_page.dart:94:31 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\pages\transfer\widgets\transfer_mode_card.dart:93:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\pages\transfer\widgets\transfer_mode_card.dart:108:38 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\pages\transfer\widgets\transfer_mode_card.dart:189:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\pages\transfer\widgets\transfer_mode_card.dart:330:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\pages\transfer\widgets\transfer_mode_card.dart:452:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\pages\transfer\widgets\transfer_mode_card.dart:558:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\pages\transfer\widgets\transfer_mode_card.dart:578:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\ui\pages\transfer\widgets\transfer_mode_card.dart:607:49 - deprecated_member_use
+

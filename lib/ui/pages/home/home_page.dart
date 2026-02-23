@@ -3,22 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../design_system/constants/assets.dart';
-
 import '../../../kernel/state/game_provider.dart';
-import '../../../kernel/di/injection.dart';
 
 // Components
 import '../transfer/widgets/transfer_mode_card.dart';
-
 import '../../design_system/visual_skins/implementations/maimai_dx/circle_background.dart';
 import '../../design_system/visual_skins/implementations/chunithm/verse_background.dart';
 import '../../design_system/kit_shared/sticky_dot_indicator.dart';
 
 // Pages
 import '../settings/settings_page.dart';
-
-// Services
-import '../../../kernel/services/storage_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -28,11 +22,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // We keep some ephemeral state here (Login/Sync) until we have a proper UserProvider
-  bool isMaimaiLoggedIn = false;
-  bool isChunithmLoggedIn = false;
-  bool isSyncing = false;
-
   // New Transfer Mode State (0: DF, 1: Both, 2: LXNS)
   // These are kept local to page for now as they are per-session UI choice
   int _maimaiTransferMode = 0;
@@ -41,22 +30,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus();
-  }
-
-  Future<void> _checkLoginStatus() async {
-    final maiCookie = await getIt<StorageService>().read(
-      StorageService.kMaimaiCookie,
-    );
-    final chuniCookie = await getIt<StorageService>().read(
-      StorageService.kChunithmCookie,
-    );
-    if (mounted) {
-      setState(() {
-        isMaimaiLoggedIn = maiCookie != null;
-        isChunithmLoggedIn = chuniCookie != null;
-      });
-    }
   }
 
   @override
@@ -188,7 +161,7 @@ class _HomePageState extends State<HomePage> {
           ),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
-            child: Container(color: Colors.white.withOpacity(0.8)),
+            child: Container(color: Colors.white.withValues(alpha: 0.8)),
           ),
         ),
       ),
@@ -281,7 +254,7 @@ class _HomePageState extends State<HomePage> {
                       fontFamily: 'GameFont',
                       fontSize: 34,
                       fontWeight: FontWeight.normal,
-                      color: themeColor.withOpacity(0.2),
+                      color: themeColor.withValues(alpha: 0.2),
                       letterSpacing: -1.0,
                     ),
                   ),

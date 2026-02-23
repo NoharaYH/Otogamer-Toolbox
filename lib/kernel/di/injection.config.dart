@@ -34,9 +34,7 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i389.StorageService>(
       () => _i389.StorageService(gh<_i558.FlutterSecureStorage>()),
     );
-    gh.lazySingleton<_i340.ApiService>(
-      () => _i340.ApiService(gh<_i361.Dio>(), gh<_i389.StorageService>()),
-    );
+    gh.lazySingleton<_i340.ApiService>(() => _i340.ApiService(gh<_i361.Dio>()));
     gh.factory<_i711.TransferProvider>(
       () => _i711.TransferProvider(
         gh<_i340.ApiService>(),

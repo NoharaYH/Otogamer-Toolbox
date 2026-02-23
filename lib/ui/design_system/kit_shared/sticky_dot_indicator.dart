@@ -40,7 +40,7 @@ class StickyDotIndicator extends StatelessWidget {
                     height: dotSize,
                     margin: EdgeInsets.only(left: index == 0 ? 0 : spacing),
                     decoration: BoxDecoration(
-                      color: inactiveColor.withOpacity(0.3),
+                      color: inactiveColor.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
                     ),
                   );

@@ -40,7 +40,7 @@ class PageShell extends StatelessWidget {
                 ),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
-                  child: Container(color: Colors.white.withOpacity(0.8)),
+                  child: Container(color: Colors.white.withValues(alpha: 0.8)),
                 ),
               ),
             ),

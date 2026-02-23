@@ -10,8 +10,6 @@ class StorageService {
   // Keys
   static const kDivingFishToken = 'df_token';
   static const kLxnsToken = 'lxns_token';
-  static const kMaimaiCookie = 'maimai_cookie';
-  static const kChunithmCookie = 'chunithm_cookie';
 
   // Generic Write
   Future<void> save(String key, String value) async {

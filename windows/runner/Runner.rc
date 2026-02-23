@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "flutter_application_1" "\0"
+            VALUE "CompanyName", "com.noharayh.toolbox" "\0"
+            VALUE "FileDescription", "街机音游工具箱" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "flutter_application_1" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "flutter_application_1.exe" "\0"
-            VALUE "ProductName", "flutter_application_1" "\0"
+            VALUE "InternalName", "街机音游工具箱" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.noharayh.toolbox" "\0"
+            VALUE "OriginalFilename", "街机音游工具箱.exe" "\0"
+            VALUE "ProductName", "街机音游工具箱" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

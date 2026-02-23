@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:injectable/injectable.dart';
 import '../services/storage_service.dart';
 import '../services/api_service.dart';
@@ -14,19 +15,25 @@ class TransferProvider extends ChangeNotifier {
 
   // Observable State
   bool _isLoading = false;
-  bool _isStorageLoaded = false; // New state for initial load
+  bool _isStorageLoaded = false;
   bool _isDivingFishVerified = false;
   bool _isLxnsVerified = false;
+  bool _isVpnRunning = false;
   String? _errorMessage;
   String? _successMessage;
+  String _vpnLog = "";
+
+  static const _channel = MethodChannel('com.nohara.otogamer/vpn');
 
   // Getters
   bool get isLoading => _isLoading;
   bool get isStorageLoaded => _isStorageLoaded;
   bool get isDivingFishVerified => _isDivingFishVerified;
   bool get isLxnsVerified => _isLxnsVerified;
+  bool get isVpnRunning => _isVpnRunning;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
+  String get vpnLog => _vpnLog;
 
   // Mode Selection (0: DF, 1: Both, 2: LXNS)
   // We can manage mode per game type here or let UI pass it in.
@@ -34,6 +41,44 @@ class TransferProvider extends ChangeNotifier {
 
   TransferProvider(this._apiService, this._storageService) {
     _loadTokens();
+    _initChannel();
+  }
+
+  void _initChannel() {
+    _channel.setMethodCallHandler((call) async {
+      switch (call.method) {
+        case 'onStatusChanged':
+          _isVpnRunning = call.arguments['isRunning'];
+          final status = call.arguments['status'] as String?;
+          if (status != null) _successMessage = status;
+          notifyListeners();
+          break;
+        case 'onLogReceived':
+          _vpnLog += "${call.arguments}\n";
+          notifyListeners();
+          break;
+        case 'onVpnPrepared':
+          if (call.arguments == true) {
+            startVpn();
+          }
+          break;
+      }
+    });
+  }
+
+  Future<void> startVpn() async {
+    final ok = await _channel.invokeMethod<bool>('prepareVpn');
+    if (ok == true) {
+      await _channel.invokeMethod('startVpn', {
+        'username': dfController.text,
+        'password':
+            lxnsController.text, // Mapping lxns token as second param if needed
+      });
+    }
+  }
+
+  Future<void> stopVpn() async {
+    await _channel.invokeMethod('stopVpn');
   }
 
   @override

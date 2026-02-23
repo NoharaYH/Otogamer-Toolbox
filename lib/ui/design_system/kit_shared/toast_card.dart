@@ -1,6 +1,5 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../visual_skins/skin_extension.dart';
+
 import '../../../../kernel/state/toast_provider.dart';
 
 class GameToastCard extends StatelessWidget {
@@ -12,8 +11,7 @@ class GameToastCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 获取当前皮肤主题色
-    final skin = Theme.of(context).extension<SkinExtension>();
-    final Color themeColor = skin?.medium ?? const Color(0xFFFF83AA);
+    // final skin = Theme.of(context).extension<SkinExtension>();
 
     Color baseColor;
     IconData iconData;
@@ -33,7 +31,7 @@ class GameToastCard extends StatelessWidget {
         break;
     }
 
-    final solidBgColor = baseColor.withOpacity(1.0);
+    final solidBgColor = baseColor.withValues(alpha: 1.0);
     final solidBorderColor = baseColor;
     final textColor = Colors.white;
     final iconColor = Colors.white;

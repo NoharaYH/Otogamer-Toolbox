@@ -91,7 +91,7 @@ class _ConfirmButtonState extends State<ConfirmButton>
       showLoading = true;
     } else if (widget.onPressed == null) {
       // 禁用：灰色 (Disabled 状态移除，由 onPressed 是否为空决定)
-      buttonColor = Colors.grey.withOpacity(0.4);
+      buttonColor = Colors.grey.withValues(alpha: 0.4);
     } else {
       buttonColor = baseColor;
     }
