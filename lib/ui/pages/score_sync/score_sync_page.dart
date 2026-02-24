@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../kernel/state/game_provider.dart';
+import '../../../application/shared/game_provider.dart';
 import '../../design_system/kit_shared/game_page_item.dart';
 import '../../design_system/kit_shared/kit_game_carousel.dart';
 

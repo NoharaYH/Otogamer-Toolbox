@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../kernel/state/mai_music_provider.dart';
-import '../../../kernel/state/toast_provider.dart';
+import '../../../application/mai/mai_music_provider.dart';
+import '../../../application/shared/toast_provider.dart';
 import '../../design_system/page_shell.dart';
 import '../../design_system/constants/sizes.dart';
 import '../../design_system/kit_shared/confirm_button.dart';

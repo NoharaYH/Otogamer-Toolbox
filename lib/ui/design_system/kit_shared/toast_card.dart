@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../kernel/state/toast_provider.dart';
+import '../../../../application/shared/toast_provider.dart';
 
 class GameToastCard extends StatelessWidget {
   final String message;

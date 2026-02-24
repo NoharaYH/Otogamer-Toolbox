@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../kernel/state/transfer_provider.dart';
+import '../../../../application/transfer/transfer_provider.dart';
 import '../constants/sizes.dart';
 import 'score_sync_mode_tabs.dart';
 

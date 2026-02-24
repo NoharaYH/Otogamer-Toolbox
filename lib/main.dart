@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'kernel/di/injection.dart';
 import 'ui/pages/score_sync/score_sync_page.dart';
-import 'kernel/state/game_provider.dart';
-import 'kernel/state/transfer_provider.dart';
-import 'kernel/state/toast_provider.dart';
-import 'kernel/state/mai_music_provider.dart';
-import 'kernel/state/chu_music_provider.dart';
+import 'application/shared/game_provider.dart';
+import 'application/transfer/transfer_provider.dart';
+import 'application/shared/toast_provider.dart';
+import 'application/mai/mai_music_provider.dart';
+import 'application/chu/chu_music_provider.dart';
 
 import 'ui/design_system/kit_shared/toast_queue_manager.dart';
 

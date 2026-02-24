@@ -12,8 +12,8 @@ import '../../../design_system/kit_score_sync/content_animator.dart';
 import '../../../design_system/kit_shared/confirm_button.dart';
 import '../../../design_system/kit_score_sync/mai_dif_choice.dart';
 
-import '../../../../kernel/state/transfer_provider.dart';
-import '../../../../kernel/state/toast_provider.dart';
+import '../../../../application/transfer/transfer_provider.dart';
+import '../../../../application/shared/toast_provider.dart';
 
 class ScoreSyncAssembly extends StatelessWidget {
   final int mode;

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../kernel/state/toast_provider.dart';
+import '../../../application/shared/toast_provider.dart';
 import 'toast_card.dart';
 
 // ============================================================

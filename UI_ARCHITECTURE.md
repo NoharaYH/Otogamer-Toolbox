@@ -56,8 +56,10 @@ lib/ui/
 
 ### 3. 单向依赖方向
 
-- **Pages** -> **Kit (Shared/Specific)** -> **Visual Skins**
+- **Pages** -> **Application** -> **Kit (Shared/Specific)** -> **Visual Skins**
+- **Logic** <- **Application** -> **Kernel**
 - **REJECT**：严禁 Page 层直接引用具体的皮肤实现类 (Implementations)，应通过 `GamePageItem` 协议层注入。
+- **REJECT**：严禁 Logic 层引用 Flutter/UI 相关的类 (如 TextEditingController)，此类需求应在 Application 层处理。
 
 ---
 

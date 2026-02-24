@@ -14,7 +14,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart' as _i558;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 
-import '../state/transfer_provider.dart' as _i711;
+import '../../application/transfer/transfer_provider.dart' as _i711;
 import '../services/api_service.dart' as _i340;
 import '../services/storage_service.dart' as _i389;
 import 'register_module.dart' as _i291;
