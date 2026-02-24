@@ -102,13 +102,7 @@ class MaimaiSkin extends SkinExtension {
 
   @override
   SkinExtension copyWith({Color? light, Color? medium, Color? dark}) {
-    return MaimaiSkin(); // 皮肤是常量，不需要复制
-  }
-
-  @override
-  SkinExtension lerp(ThemeExtension<SkinExtension>? other, double t) {
-    if (other is! MaimaiSkin) return this;
-    return this; // 简化实现，不做插值
+    return this; // 皮肤是常量，不需要复制
   }
 }
 

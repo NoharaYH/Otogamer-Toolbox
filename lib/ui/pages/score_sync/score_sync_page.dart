@@ -14,6 +14,7 @@ import '../../design_system/visual_skins/implementations/maimai_dx/circle_backgr
 import '../../design_system/visual_skins/implementations/chunithm/verse_background.dart';
 
 import '../settings/settings_page.dart';
+import '../music_data/music_data_page.dart';
 
 class ScoreSyncPage extends StatelessWidget {
   const ScoreSyncPage({super.key});
@@ -38,6 +39,13 @@ class ScoreSyncPage extends StatelessWidget {
         ),
       ],
       headerActions: [
+        IconButton(
+          icon: const Icon(Icons.library_music, color: Colors.black87),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MusicDataPage()),
+          ),
+        ),
         IconButton(
           icon: const Icon(Icons.settings, color: Colors.black87),
           onPressed: () => Navigator.push(

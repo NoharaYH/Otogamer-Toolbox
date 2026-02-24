@@ -71,12 +71,6 @@ class ChunithmSkin extends SkinExtension {
 
   @override
   SkinExtension copyWith({Color? light, Color? medium, Color? dark}) {
-    return ChunithmSkin();
-  }
-
-  @override
-  SkinExtension lerp(ThemeExtension<SkinExtension>? other, double t) {
-    if (other is! ChunithmSkin) return this;
     return this;
   }
 }

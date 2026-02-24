@@ -13,7 +13,10 @@ class StickyDotIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final skin = Theme.of(context).extension<SkinExtension>();
+    // 采用多态查找，确保能匹配到 MaimaiSkin/ChunithmSkin 或插值中的 ThemeSkin
+    final skin = Theme.of(
+      context,
+    ).extensions.values.whereType<SkinExtension>().firstOrNull;
     final Color activeColor = skin?.medium ?? Colors.pink;
     final Color inactiveColor = activeColor.withValues(alpha: 0.3);
 

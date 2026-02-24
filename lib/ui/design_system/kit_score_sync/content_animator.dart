@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../constants/sizes.dart';
 
 class TransferContentAnimator extends StatefulWidget {
   final Widget child;
