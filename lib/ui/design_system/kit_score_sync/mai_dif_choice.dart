@@ -243,7 +243,7 @@ class _ChuDifChoiceState extends State<ChuDifChoice> {
       children: [
         const Center(
           child: Padding(
-            padding: const EdgeInsets.all(UiSizes.spaceXL),
+            padding: EdgeInsets.all(UiSizes.spaceXL),
             child: Text(
               '中二难度选择器（待开发）',
               style: TextStyle(fontSize: 16, color: Colors.grey),

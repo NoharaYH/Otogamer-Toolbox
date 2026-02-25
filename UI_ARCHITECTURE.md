@@ -61,6 +61,20 @@ lib/ui/
 - **REJECT**：严禁 Page 层直接引用具体的皮肤实现类 (Implementations)，应通过 `GamePageItem` 协议层注入。
 - **REJECT**：严禁 Logic 层引用 Flutter/UI 相关的类 (如 TextEditingController)，此类需求应在 Application 层处理。
 
+### 4. 布局规程 (Layout Conventions)
+
+- **由内向外撑开 (Internal Pushing Pattern)**：
+  - **原理**：禁止在父容器外部通过 `height` 强制干预 UI 体积（除非是固定高度场景）。容器高度的增长应由内部业务组件通过千斤顶效应 (Jacking Effect) 产生物理占位，利用 Flutter 的 `WrapContent` 天性将父容器自然“顶”开。
+- **有限约束安全准则 (Finite Constraint Safety)**：
+  - **原理**：Flutter 禁止在 `Finite`（有限）与 `Unbounded/Infinity`（无限）约束之间进行动画插值，否则会触发渲染断言崩溃。
+  - **规程**：所有执行容器高度动画的起点与终点必须是确切的 Finite 数值。终点高度应通过 `MediaQuery` 与 `sizes.dart` 规程预计算出绝对像素值，**REJECT** 在 `AnimatedContainer` 等动画组件中使用 `double.infinity` 或依赖 `Flexible/Expanded` 隐性提供的无限边界作为动画目标。
+- **几何精算与自适应 (Adaptive Geometry)**：
+  - **原则**：严禁使用魔数硬编码组件高度。
+  - **规程**：组件的目标视口高度、边缘间距必须基于物理设备规格实时计算。公式：`目标高度 = 屏幕总高 - 顶部安全偏移 - 静态组件占用 - 底部原子间距(12px)`。
+- **物理与视觉异步 (Physics-Visual Decoupling)**：
+  - **原则**：体积变化优先，内容渲染置后。
+  - **规程**：在执行大规模高度扩张时，必须将其分解为：**阶段 A（物理占位容器扩张）** 与 **阶段 B（内部文字/复杂内容淡入挂载）**。确保在体积动画定型前，不进行引发 `RenderFlex` 报错的高开销排版重绘。
+
 ---
 
 ## 动效引擎协议 (KitGameCarousel)

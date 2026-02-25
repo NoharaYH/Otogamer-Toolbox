@@ -57,9 +57,10 @@ class ScoreSyncAssembly extends StatelessWidget {
 
               // 日志面板管理
               SyncLogPanel(
-                isExpanded: true,
                 logs: provider.vpnLog,
-                forceHidden: !provider.isTracking,
+                forceHidden:
+                    !provider.isTracking ||
+                    provider.trackingGameType != gameType,
                 onCopy: () {
                   Clipboard.setData(ClipboardData(text: provider.vpnLog));
                   context.read<ToastProvider>().show(
@@ -140,7 +141,7 @@ class ScoreSyncAssembly extends StatelessWidget {
           MaiDifChoice(
             activeColor: skin.medium,
             onImport: () {
-              provider.startImport();
+              provider.startImport(gameType: gameType);
               context.read<ToastProvider>().show(
                 '正在初始化环境...',
                 ToastType.verifying,
@@ -151,7 +152,7 @@ class ScoreSyncAssembly extends StatelessWidget {
           ChuDifChoice(
             activeColor: skin.medium,
             onImport: () {
-              provider.startImport();
+              provider.startImport(gameType: gameType);
               context.read<ToastProvider>().show(
                 '正在初始化环境...',
                 ToastType.verifying,

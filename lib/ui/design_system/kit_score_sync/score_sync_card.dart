@@ -30,7 +30,9 @@ class ScoreSyncCard extends StatelessWidget {
           margin: EdgeInsets.only(
             left: UiSizes.spaceS,
             right: UiSizes.spaceS,
-            bottom: UiSizes.getCardBottomMargin(context),
+            bottom: provider.isTracking
+                ? UiSizes.getCardBottomMargin(context)
+                : UiSizes.getCardBottomMargin(context),
           ),
           decoration: BoxDecoration(
             color: const Color(0xCCFFFFFF),
@@ -44,28 +46,20 @@ class ScoreSyncCard extends StatelessWidget {
             ],
           ),
           child: SingleChildScrollView(
-            physics: provider.isTracking
-                ? const BouncingScrollPhysics()
-                : const NeverScrollableScrollPhysics(),
+            physics: const BouncingScrollPhysics(),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(
                 UiSizes.cardContentPadding,
                 UiSizes.atomicComponentGap,
                 UiSizes.cardContentPadding,
-                0,
+                UiSizes.atomicComponentGap,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 1. 模式选择 Tabs
                   ScoreSyncModeTabs(mode: mode, onModeChanged: onModeChanged),
-
-                  // 2. 外部注入的内容区域 (Form 或 SuccessView)
                   child,
-
-                  // 3. 底部保底间距 (12px)
-                  const SizedBox(height: UiSizes.atomicComponentGap),
                 ],
               ),
             ),

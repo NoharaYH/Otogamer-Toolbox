@@ -13,4 +13,10 @@ class KitAnimationEngine {
 
   /// 消失/收缩类的基础持续时间 (300ms，快速离开)
   static const Duration collapseDuration = Duration(milliseconds: 350);
+
+  /// 轻微状态切换时长
+  static const Duration shortDuration = Duration(milliseconds: 250);
+
+  /// 极速响应时长
+  static const Duration fastDuration = Duration(milliseconds: 150);
 }

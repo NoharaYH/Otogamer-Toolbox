@@ -20,6 +20,7 @@ class TransferProvider extends ChangeNotifier {
   bool _isLxnsVerified = false;
   bool _isVpnRunning = false;
   bool _isTracking = false;
+  int? _trackingGameType;
   String? _errorMessage;
   String? _successMessage;
   String _vpnLog = "";
@@ -33,6 +34,7 @@ class TransferProvider extends ChangeNotifier {
   bool get isLxnsVerified => _isLxnsVerified;
   bool get isVpnRunning => _isVpnRunning;
   bool get isTracking => _isTracking;
+  int? get trackingGameType => _trackingGameType;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
   String get vpnLog => _vpnLog;
@@ -78,20 +80,23 @@ class TransferProvider extends ChangeNotifier {
   Future<void> stopVpn() async {
     await _channel.invokeMethod('stopVpn');
     _isTracking = false;
+    _trackingGameType = null;
     notifyListeners();
   }
 
-  void startTracking() {
+  void startTracking({required int gameType}) {
     _isTracking = true;
+    _trackingGameType = gameType;
     notifyListeners();
   }
 
   void stopTracking() {
     _isTracking = false;
+    _trackingGameType = null;
     notifyListeners();
   }
 
-  Future<void> startImport() async {
+  Future<void> startImport({required int gameType}) async {
     // 1. 启动 VPN
     await startVpn();
 
@@ -101,6 +106,7 @@ class TransferProvider extends ChangeNotifier {
 
     // 3. 开启跟踪模式并初始化日志
     _isTracking = true;
+    _trackingGameType = gameType;
     _vpnLog = "[SYSTEM] 开始准备环境...\n";
     _vpnLog += "[VPN] 服务已启动，正在监听网络包\n";
     _vpnLog += "[CLIPBOARD] 授权链接已复制，请前往微信访问\n";

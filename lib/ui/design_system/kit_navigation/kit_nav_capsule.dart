@@ -127,7 +127,7 @@ class _KitNavCapsuleState extends State<KitNavCapsule> {
                     if (widget.label != null) ...[
                       const SizedBox(width: 9.6), // 文字距 Icon 的间隙
                       // 双行文字
-                      Container(
+                      SizedBox(
                         // 高度锁定为38.4，让 Column 刚好与 Icon 上下顶对齐
                         height: 38.4,
                         child: Column(

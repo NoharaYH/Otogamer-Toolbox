@@ -9,7 +9,6 @@ import '../kit_shared/kit_animation_engine.dart';
 /// 1. 胶囊：仅显示工具栏按钮
 /// 2. 展开：显示日志内容并向下延伸
 class SyncLogPanel extends StatefulWidget {
-  final bool isExpanded;
   final String logs;
   final VoidCallback onCopy;
   final VoidCallback onClose;
@@ -17,7 +16,6 @@ class SyncLogPanel extends StatefulWidget {
 
   const SyncLogPanel({
     super.key,
-    required this.isExpanded,
     required this.logs,
     required this.onCopy,
     required this.onClose,
@@ -29,15 +27,22 @@ class SyncLogPanel extends StatefulWidget {
 }
 
 class _SyncLogPanelState extends State<SyncLogPanel> {
-  final ScrollController _scrollController = ScrollController();
-  bool _isShown = false; // 是否已浮现 (从0开始)
-  bool _isActuallyExpanded = false;
+  bool isShown = false; // 是否显示胶囊外壳
+  bool isActuallyExpanded = false; // 是否扩张内部正文
+
+  // 内部滚动控制器
+  late final ScrollController scrollController;
 
   @override
   void initState() {
     super.initState();
-    if (!widget.forceHidden) {
-      _startEntryAnimation();
+    scrollController = ScrollController();
+
+    if (!widget.forceHidden && widget.logs.isNotEmpty) {
+      isShown = true;
+      isActuallyExpanded = true;
+    } else if (!widget.forceHidden) {
+      startEntryAnimation();
     }
   }
 
@@ -46,28 +51,21 @@ class _SyncLogPanelState extends State<SyncLogPanel> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.forceHidden && !widget.forceHidden) {
-      _startEntryAnimation();
+      startEntryAnimation();
     }
 
-    if (widget.forceHidden) {
-      _isShown = false;
-      _isActuallyExpanded = false;
-    }
-
-    if (widget.isExpanded && !oldWidget.isExpanded) {
-      Future.delayed(const Duration(milliseconds: 400), () {
-        if (mounted) setState(() => _isActuallyExpanded = true);
+    if (widget.forceHidden && isShown) {
+      setState(() => isActuallyExpanded = false);
+      Future.delayed(KitAnimationEngine.expandDuration, () {
+        if (mounted) setState(() => isShown = false);
       });
-    } else if (!widget.isExpanded && oldWidget.isExpanded) {
-      setState(() => _isActuallyExpanded = false);
     }
 
-    // 当日志更新且处于展开状态时，自动滚动到底部
-    if (widget.logs != oldWidget.logs && _isActuallyExpanded) {
+    if (widget.logs != oldWidget.logs && isActuallyExpanded) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
+        if (scrollController.hasClients) {
+          scrollController.animateTo(
+            scrollController.position.maxScrollExtent,
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
           );
@@ -76,115 +74,124 @@ class _SyncLogPanelState extends State<SyncLogPanel> {
     }
   }
 
-  void _startEntryAnimation() {
-    // 阶段化时序：
-    // 1. 等待白色卡片先行扩张 (600ms+)
-    Future.delayed(const Duration(milliseconds: 700), () {
+  void startEntryAnimation() {
+    setState(() => isShown = true);
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted && !widget.forceHidden) {
-        setState(() => _isShown = true);
-
-        // 2. 胶囊浮现后，向下生长出内容
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted && !widget.forceHidden) {
-            setState(() => _isActuallyExpanded = true);
-          }
-        });
+        setState(() => isActuallyExpanded = true);
       }
     });
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // 【圆角对齐】直接锁定到“开始导入”按钮的圆角，不再动态变化
-    const double borderRadius = UiSizes.buttonBorderRadius;
+    // 规程：间距内化，防止关闭时残留边距
+    final double targetHeight = isActuallyExpanded
+        ? UiSizes.getLogPanelMaxHeight(context, UiSizes.syncFormEstimatedHeight)
+        : (isShown ? 38.0 : 0.0);
 
-    return AnimatedSize(
-      duration: KitAnimationEngine.expandDuration,
-      curve: KitAnimationEngine.decelerateCurve, // 平滑曲线，防止抖动
-      child: !_isShown
-          ? const SizedBox(width: double.infinity, height: 0)
-          : Padding(
-              padding: const EdgeInsets.fromLTRB(
-                0,
-                UiSizes.atomicComponentGap,
-                0,
-                0,
-              ),
-              child: AnimatedContainer(
-                duration: KitAnimationEngine.expandDuration,
-                curve: KitAnimationEngine.decelerateCurve,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF323232),
-                  borderRadius: BorderRadius.circular(borderRadius),
+    // 规程：间距作为高度的一部分
+    final double totalHeight = isShown ? targetHeight + UiSizes.spaceS : 0.0;
+
+    return AnimatedOpacity(
+      duration: KitAnimationEngine.shortDuration,
+      opacity: isShown ? 1.0 : 0.0,
+      child: AnimatedScale(
+        duration: KitAnimationEngine.shortDuration,
+        scale: isShown ? 1.0 : 0.95,
+        curve: Curves.easeOutBack,
+        child: AnimatedContainer(
+          duration: KitAnimationEngine.expandDuration,
+          curve: KitAnimationEngine.decelerateCurve,
+          width: double.infinity,
+          height: totalHeight,
+          clipBehavior: Clip.antiAlias,
+          decoration: const BoxDecoration(color: Colors.transparent),
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                const SizedBox(height: UiSizes.spaceS),
+                AnimatedContainer(
+                  duration: KitAnimationEngine.expandDuration,
+                  curve: KitAnimationEngine.decelerateCurve,
+                  height: targetHeight,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF323232),
+                    borderRadius: BorderRadius.circular(
+                      UiSizes.buttonBorderRadius,
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: _buildLogContent(),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 顶部工具栏 (精准对齐圆角中心)
-                    SizedBox(
-                      height: 38, // 稍微收窄高度
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogContent() {
+    return Column(
+      children: [
+        // 工具栏
+        SizedBox(
+          height: 38,
+          width: double.infinity,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _IconButton(icon: Icons.content_copy, onTap: widget.onCopy),
+              _IconButton(icon: Icons.close, onTap: widget.onClose),
+            ],
+          ),
+        ),
+
+        // 内容区域
+        Expanded(
+          child: AnimatedOpacity(
+            duration: KitAnimationEngine.shortDuration,
+            opacity: isActuallyExpanded ? 1.0 : 0.0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: RawScrollbar(
+                controller: scrollController,
+                thumbColor: Colors.white.withValues(alpha: 0.3),
+                radius: const Radius.circular(3),
+                thickness: 3,
+                interactive: true,
+                child: SelectionArea(
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    physics: const BouncingScrollPhysics(),
+                    child: Container(
                       width: double.infinity,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _IconButton(
-                            icon: Icons.content_copy,
-                            onTap: widget.onCopy,
-                          ),
-                          _IconButton(icon: Icons.close, onTap: widget.onClose),
-                        ],
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        widget.logs.isEmpty ? "等待日志输入..." : widget.logs,
+                        style: const TextStyle(
+                          color: Color(0xFFEEEEEE),
+                          fontSize: 13,
+                          fontFamily: 'monospace',
+                          height: 1.4,
+                        ),
                       ),
                     ),
-
-                    // 日志内容区
-                    AnimatedSize(
-                      duration: KitAnimationEngine.expandDuration,
-                      curve: KitAnimationEngine.decelerateCurve,
-                      child: _isActuallyExpanded
-                          ? ConstrainedBox(
-                              // 【回归标准】高度恢复到 280，适配新的大框间距
-                              constraints: const BoxConstraints(maxHeight: 280),
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  0,
-                                  16,
-                                  16,
-                                ),
-                                child: SelectionArea(
-                                  child: SingleChildScrollView(
-                                    controller: _scrollController,
-                                    child: Align(
-                                      alignment: Alignment.topLeft,
-                                      child: Text(
-                                        widget.logs.isEmpty
-                                            ? "等待日志输入..."
-                                            : widget.logs,
-                                        style: const TextStyle(
-                                          color: Color(0xFFEEEEEE),
-                                          fontSize: 13,
-                                          fontFamily: 'monospace',
-                                          height: 1.4,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            )
-                          : const SizedBox(width: double.infinity, height: 0),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
+          ),
+        ),
+      ],
     );
   }
 }

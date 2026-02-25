@@ -45,6 +45,9 @@ class UiSizes {
   static const double logoHeight = 80.0;
   static const double logoAreaHeight = 100.0;
 
+  /// 基础表单/头部/Tabs 的预估高度占用
+  static const double syncFormEstimatedHeight = 464.0;
+
   // --- Animation ---
   static const Duration defaultAnimationDuration = Duration(milliseconds: 300);
   static const Duration shortAnimationDuration = Duration(milliseconds: 200);
@@ -86,9 +89,32 @@ class UiSizes {
     return getHorizontalMargin(context) + cardContentPadding;
   }
 
-  /// Returns the bottom margin for the card, respecting safe area
+  /// Returns the bottom margin for the card, respecting 3% screen rule + spaceS
   static double getCardBottomMargin(BuildContext context) {
-    return MediaQuery.of(context).padding.bottom + spaceL;
+    final screenHeight = MediaQuery.of(context).size.height;
+    return (screenHeight * 0.03) + spaceS;
+  }
+
+  /// Returns the pure bottom safe area margin
+  static double getBottomMarginWithSafeArea(BuildContext context) {
+    return MediaQuery.of(context).padding.bottom;
+  }
+
+  /// Calculates the available height for the log panel to ensure the card
+  /// touches the bottom at the 3% adaptive margin standard.
+  static double getLogPanelMaxHeight(
+    BuildContext context,
+    double currentUsedHeight,
+  ) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final topMargin = getTopMarginWithSafeArea(context);
+    final bottomMargin = getCardBottomMargin(context);
+
+    // ReservedSpace = TotalHeight - TopMargin - UsedHeight - BottomMargin
+    final available =
+        screenHeight - topMargin - currentUsedHeight - bottomMargin;
+
+    return available > 100 ? available : 180;
   }
 
   /// Returns the top offset for the dot indicator
