@@ -376,7 +376,7 @@ public class LocalVpnService extends VpnService implements Runnable {
 //        builder.addAllowedApplication("com.noharayh.toolbox");
 
         Intent intent = new Intent(this, com.noharayh.toolbox.MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
         builder.setConfigureIntent(pendingIntent);
 
         builder.setSession(ProxyConfig.Instance.getSessionName());
@@ -453,6 +453,7 @@ public class LocalVpnService extends VpnService implements Runnable {
     public interface onStatusChangedListener {
         void onStatusChanged(String status, Boolean isRunning);
         void onLogReceived(String logString);
+        void onAuthUrlReceived(String authUrl);
     }
 
 }

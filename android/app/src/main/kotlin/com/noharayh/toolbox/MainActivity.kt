@@ -81,6 +81,12 @@ class MainActivity : FlutterActivity(), LocalVpnService.onStatusChangedListener 
         }
     }
 
+    override fun onAuthUrlReceived(authUrl: String?) {
+        runOnUiThread {
+            methodChannel?.invokeMethod("onAuthUrlReceived", authUrl)
+        }
+    }
+
     override fun onDestroy() {
         LocalVpnService.removeOnStatusChangedListener(this)
         super.onDestroy()

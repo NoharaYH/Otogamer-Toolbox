@@ -54,7 +54,21 @@ public class HttpCapturerTunnel extends Tunnel {
         // If it's a auth redirect request, catch it
         if (url.startsWith("http://tgk-wcaime.wahlap.com/wc_auth/oauth/callback/maimai-dx")) {
             Log.d(TAG, "Auth request caught!");
-            CrawlerCaller.fetchData(url);
+            CrawlerCaller.onAuthUrlReceived(url);
+            
+            // Redirect browser to local web server (9457) to show success message
+            // This prevents the browser from following the original redirect and consuming the code.
+            String response = "HTTP/1.1 302 Found\r\n" +
+                              "Location: http://127.0.0.1:9457\r\n" +
+                              "Content-Length: 0\r\n" +
+                              "Connection: close\r\n\r\n";
+            buffer.clear();
+            buffer.put(response.getBytes());
+            buffer.flip();
+            
+            // After sending redirect, the tunnel will effectively close after the next write
+            m_BrotherTunnel.write(buffer, true);
+            this.dispose();
         }
     }
 

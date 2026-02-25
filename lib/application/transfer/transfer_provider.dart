@@ -1,13 +1,17 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:injectable/injectable.dart';
 import '../../kernel/services/storage_service.dart';
 import '../../kernel/services/api_service.dart';
+import '../../score_sync/wechat_crawler.dart';
 
 @injectable
 class TransferProvider extends ChangeNotifier {
   final ApiService _apiService;
   final StorageService _storageService;
+
+  late final WechatCrawler _crawler;
 
   // Controllers for input fields
   final TextEditingController dfController = TextEditingController();
@@ -19,6 +23,7 @@ class TransferProvider extends ChangeNotifier {
   bool _isDivingFishVerified = false;
   bool _isLxnsVerified = false;
   bool _isVpnRunning = false;
+  Set<int> _selectedDifficulties = {0, 1, 2, 3, 4, 5};
   bool _isTracking = false;
   int? _trackingGameType;
   String? _errorMessage;
@@ -39,9 +44,24 @@ class TransferProvider extends ChangeNotifier {
   String? get successMessage => _successMessage;
   String get vpnLog => _vpnLog;
 
+  Timer? _logNotifyTimer;
+
   TransferProvider(this._apiService, this._storageService) {
+    _crawler = WechatCrawler(
+      onLog: (msg) => _handleLog(msg),
+      onError: (err) => _handleLog("[ERROR] $err"),
+    );
     _loadTokens();
     _initChannel();
+  }
+
+  void _handleLog(String msg) {
+    _vpnLog += "$msg\n";
+    // Debounce notifyListeners to avoid ANR during high-frequency logging
+    if (_logNotifyTimer?.isActive ?? false) return;
+    _logNotifyTimer = Timer(const Duration(milliseconds: 100), () {
+      notifyListeners();
+    });
   }
 
   void _initChannel() {
@@ -57,6 +77,23 @@ class TransferProvider extends ChangeNotifier {
           _vpnLog += "${call.arguments}\n";
           notifyListeners();
           break;
+        case 'onAuthUrlReceived':
+          final url = call.arguments as String;
+          _vpnLog += "[SYSTEM] 授权链接已捕获，正在后台启动传分任务...\n";
+          notifyListeners();
+
+          _crawler
+              .executeSync(
+                username: dfController.text.trim(),
+                password: "",
+                difficulties: _selectedDifficulties,
+                wechatAuthUrl: url,
+              )
+              .whenComplete(() {
+                _vpnLog += "[SYSTEM] 传分全流程结束，已断开代理。您可以手动关闭日志面板。\n";
+                stopVpn(resetState: false);
+              });
+          break;
         case 'onVpnPrepared':
           if (call.arguments == true) {
             startVpn();
@@ -71,17 +108,19 @@ class TransferProvider extends ChangeNotifier {
     if (ok == true) {
       await _channel.invokeMethod('startVpn', {
         'username': dfController.text,
-        'password':
-            lxnsController.text, // Mapping lxns token as second param if needed
+        'password': lxnsController.text,
       });
     }
   }
 
-  Future<void> stopVpn() async {
+  Future<bool> stopVpn({bool resetState = true}) async {
     await _channel.invokeMethod('stopVpn');
-    _isTracking = false;
-    _trackingGameType = null;
+    if (resetState) {
+      _isTracking = false;
+      _trackingGameType = null;
+    }
     notifyListeners();
+    return true;
   }
 
   void startTracking({required int gameType}) {
@@ -96,20 +135,32 @@ class TransferProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> startImport({required int gameType}) async {
-    // 1. 启动 VPN
-    await startVpn();
-
-    // 2. 复制链接 (模拟获取授权链接，实际可能由 native 或 API 提供)
-    const authUrl = "http://maimai.com.cn/auth";
-    await Clipboard.setData(const ClipboardData(text: authUrl));
-
-    // 3. 开启跟踪模式并初始化日志
+  Future<void> startImport({
+    required int gameType,
+    Set<int> difficulties = const {0, 1, 2, 3, 4, 5},
+  }) async {
     _isTracking = true;
     _trackingGameType = gameType;
-    _vpnLog = "[SYSTEM] 开始准备环境...\n";
-    _vpnLog += "[VPN] 服务已启动，正在监听网络包\n";
-    _vpnLog += "[CLIPBOARD] 授权链接已复制，请前往微信访问\n";
+    _selectedDifficulties = difficulties;
+    _vpnLog = "[SYSTEM] 正在启动本地代理环境...\n";
+    notifyListeners();
+
+    try {
+      await startVpn();
+
+      // Use local proxy URL with random path to bypass WeChat cache
+      final randomStr = DateTime.now().millisecondsSinceEpoch
+          .toRadixString(36)
+          .substring(0, 8);
+      final localProxyUrl = "http://127.0.0.2:8284/$randomStr";
+      await Clipboard.setData(ClipboardData(text: localProxyUrl));
+
+      _vpnLog += "[VPN] 服务已启动，正在监听网络包\n";
+      _vpnLog += "[CLIPBOARD] 本地中转链接已复制，请前往微信打开\n";
+      _vpnLog += "[HINT] 捕获授权码后，同步将在后台自动完成\n";
+    } catch (e) {
+      _vpnLog += "[ERROR] 初始化失败: $e\n";
+    }
 
     notifyListeners();
   }
@@ -123,7 +174,6 @@ class TransferProvider extends ChangeNotifier {
 
   Future<void> _loadTokens() async {
     await Future.delayed(const Duration(milliseconds: 300));
-
     final df = await _storageService.read(StorageService.kDivingFishToken);
     final lxns = await _storageService.read(StorageService.kLxnsToken);
 
@@ -131,12 +181,10 @@ class TransferProvider extends ChangeNotifier {
       dfController.text = df;
       _isDivingFishVerified = true;
     }
-
     if (lxns != null && lxns.isNotEmpty) {
       lxnsController.text = lxns;
       _isLxnsVerified = true;
     }
-
     _isStorageLoaded = true;
     notifyListeners();
   }
@@ -144,14 +192,6 @@ class TransferProvider extends ChangeNotifier {
   void resetVerification({bool df = false, bool lxns = false}) {
     if (df) _isDivingFishVerified = false;
     if (lxns) _isLxnsVerified = false;
-    _errorMessage = null;
-    _successMessage = null;
-    notifyListeners();
-  }
-
-  void resetAllVerification() {
-    _isDivingFishVerified = false;
-    _isLxnsVerified = false;
     _errorMessage = null;
     _successMessage = null;
     notifyListeners();
@@ -168,7 +208,6 @@ class TransferProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Core Business Logic: Verify and Save
   Future<bool> verifyAndSave({required int mode}) async {
     _isLoading = true;
     _errorMessage = null;
@@ -176,11 +215,9 @@ class TransferProvider extends ChangeNotifier {
     notifyListeners();
 
     await Future.delayed(const Duration(milliseconds: 500));
-
     final needsDf = mode == 0 || mode == 1;
     final needsLxns = mode == 2 || mode == 1;
 
-    // 1. Local Validation
     if (needsDf && dfController.text.isEmpty) {
       _errorMessage = "请输入水鱼 Token";
       _isLoading = false;
@@ -198,7 +235,6 @@ class TransferProvider extends ChangeNotifier {
       bool dfSuccess = _isDivingFishVerified;
       bool lxnsSuccess = _isLxnsVerified;
 
-      // 2. Remote Verification (DF)
       if (needsDf && !dfSuccess) {
         dfSuccess = await _apiService.validateDivingFishToken(
           dfController.text,
@@ -210,8 +246,6 @@ class TransferProvider extends ChangeNotifier {
           return false;
         }
       }
-
-      // 3. Remote Verification (LXNS)
       if (needsLxns && !lxnsSuccess) {
         lxnsSuccess = await _apiService.validateLxnsToken(lxnsController.text);
         if (!lxnsSuccess) {
@@ -222,7 +256,6 @@ class TransferProvider extends ChangeNotifier {
         }
       }
 
-      // 4. Persistence
       _isDivingFishVerified = dfSuccess;
       _isLxnsVerified = lxnsSuccess;
 

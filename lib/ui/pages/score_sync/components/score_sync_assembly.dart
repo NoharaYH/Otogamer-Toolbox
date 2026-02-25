@@ -140,8 +140,8 @@ class ScoreSyncAssembly extends StatelessWidget {
         if (gameType == 0)
           MaiDifChoice(
             activeColor: skin.medium,
-            onImport: () {
-              provider.startImport(gameType: gameType);
+            onImport: (diffs) {
+              provider.startImport(gameType: gameType, difficulties: diffs);
               context.read<ToastProvider>().show(
                 '正在初始化环境...',
                 ToastType.verifying,
@@ -151,8 +151,8 @@ class ScoreSyncAssembly extends StatelessWidget {
         else
           ChuDifChoice(
             activeColor: skin.medium,
-            onImport: () {
-              provider.startImport(gameType: gameType);
+            onImport: (diffs) {
+              provider.startImport(gameType: gameType, difficulties: diffs);
               context.read<ToastProvider>().show(
                 '正在初始化环境...',
                 ToastType.verifying,

@@ -39,6 +39,12 @@ public class CrawlerCaller {
         m_Handler.post(() -> listener.onLogReceived(exceptionAsString));
     }
 
+    static public void onAuthUrlReceived(String authUrl) {
+        m_Handler.post(() -> {
+            if (listener != null) listener.onAuthUrlReceived(authUrl);
+        });
+    }
+
     static public void fetchData(String authUrl) {
         new Thread(() -> {
             try {

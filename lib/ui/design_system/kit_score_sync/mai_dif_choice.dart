@@ -10,7 +10,7 @@ import '../kit_shared/kit_bounce_scaler.dart';
 
 class MaiDifChoice extends StatefulWidget {
   final Color activeColor;
-  final VoidCallback onImport;
+  final ValueChanged<Set<int>> onImport;
 
   const MaiDifChoice({
     super.key,
@@ -99,8 +99,10 @@ class _MaiDifChoiceState extends State<MaiDifChoice> {
         const SizedBox(height: UiSizes.defaultPadding),
         ConfirmButton(
           text: '开始导入',
-          state: ConfirmButtonState.ready, // 默认就是 ready，禁用由 onPressedNull 控制
-          onPressed: _selectedDifficulties.isEmpty ? null : widget.onImport,
+          state: ConfirmButtonState.ready,
+          onPressed: _selectedDifficulties.isEmpty
+              ? null
+              : () => widget.onImport(_selectedDifficulties),
         ),
       ],
     );
@@ -223,7 +225,7 @@ class _DifficultyButtonState extends State<_DifficultyButton> {
 
 class ChuDifChoice extends StatefulWidget {
   final Color activeColor;
-  final VoidCallback onImport;
+  final ValueChanged<Set<int>> onImport;
 
   const ChuDifChoice({
     super.key,
@@ -250,7 +252,10 @@ class _ChuDifChoiceState extends State<ChuDifChoice> {
             ),
           ),
         ),
-        ConfirmButton(text: '开始导入', onPressed: widget.onImport),
+        ConfirmButton(
+          text: '开始导入',
+          onPressed: () => widget.onImport({0, 1, 2, 3, 4}),
+        ),
       ],
     );
   }
