@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../constants/assets.dart';
 import '../constants/sizes.dart';
 import '../kit_shared/confirm_button.dart';
+import '../kit_shared/kit_bounce_scaler.dart';
 
 // ============================================================
 // ============== 舞萌专属：难度选择器 =========================
@@ -121,11 +122,7 @@ class _DifficultyButton extends StatefulWidget {
   State<_DifficultyButton> createState() => _DifficultyButtonState();
 }
 
-class _DifficultyButtonState extends State<_DifficultyButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _scaleController;
-  late Animation<double> _scaleAnimation;
-
+class _DifficultyButtonState extends State<_DifficultyButton> {
   // 原始矩阵 (Identity)
   static const List<double> _identityMatrix = [
     1,
@@ -174,33 +171,6 @@ class _DifficultyButtonState extends State<_DifficultyButton>
     0,
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _scaleController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100), // 按下动画时长
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 0.9,
-      end: 0.85,
-    ).animate(CurvedAnimation(parent: _scaleController, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _scaleController.dispose();
-    super.dispose();
-  }
-
-  void _onPointerDown(PointerDownEvent event) {
-    _scaleController.forward();
-  }
-
-  void _onPointerUp(PointerEvent event) {
-    _scaleController.reverse();
-  }
-
   List<double> _lerpMatrix(double t) {
     // 线性插值计算当前矩阵
     return List.generate(20, (index) {
@@ -213,47 +183,35 @@ class _DifficultyButtonState extends State<_DifficultyButton>
   Widget build(BuildContext context) {
     final color = widget.difficulty['color'] as Color;
 
-    return Listener(
-      onPointerDown: _onPointerDown,
-      onPointerUp: _onPointerUp,
-      onPointerCancel: _onPointerUp,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedBuilder(
-          animation: _scaleAnimation,
-          builder: (context, child) =>
-              Transform.scale(scale: _scaleAnimation.value, child: child),
-          child: TweenAnimationBuilder<double>(
-            tween: Tween<double>(
-              begin: widget.isSelected ? 0.0 : 1.0,
-              end: widget.isSelected ? 0.0 : 1.0,
-            ),
-            duration: const Duration(milliseconds: 200), // 颜色淡入淡出时长
-            builder: (context, value, child) {
-              return ColorFiltered(
-                colorFilter: ColorFilter.matrix(_lerpMatrix(value)),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(
-                      UiSizes.buttonBorderRadius,
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(UiSizes.spaceXXS),
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    height: 34,
-                    child: Image.asset(
-                      widget.difficulty['asset'],
-                      height: 34,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+    return KitBounceScaler(
+      onTap: widget.onTap,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(
+          begin: widget.isSelected ? 0.0 : 1.0,
+          end: widget.isSelected ? 0.0 : 1.0,
         ),
+        duration: const Duration(milliseconds: 200), // 颜色淡入淡出时长
+        builder: (context, value, child) {
+          return ColorFiltered(
+            colorFilter: ColorFilter.matrix(_lerpMatrix(value)),
+            child: Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(UiSizes.buttonBorderRadius),
+              ),
+              padding: const EdgeInsets.all(UiSizes.spaceXXS),
+              alignment: Alignment.center,
+              child: SizedBox(
+                height: 34,
+                child: Image.asset(
+                  widget.difficulty['asset'],
+                  height: 34,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

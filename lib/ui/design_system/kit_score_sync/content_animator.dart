@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../kit_shared/kit_animation_engine.dart';
 
 class TransferContentAnimator extends StatefulWidget {
   final Widget child;
@@ -7,7 +8,7 @@ class TransferContentAnimator extends StatefulWidget {
   const TransferContentAnimator({
     super.key,
     required this.child,
-    this.duration = const Duration(milliseconds: 300),
+    this.duration = KitAnimationEngine.expandDuration,
   });
 
   @override
@@ -36,7 +37,7 @@ class _TransferContentAnimatorState extends State<TransferContentAnimator>
     );
     _opacityAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeInOut,
+      curve: KitAnimationEngine.decelerateCurve,
     );
     _controller.value = 1.0; // Start fully visible
   }
@@ -95,7 +96,7 @@ class _TransferContentAnimatorState extends State<TransferContentAnimator>
   Widget build(BuildContext context) {
     return AnimatedSize(
       duration: widget.duration,
-      curve: Curves.easeInOut,
+      curve: KitAnimationEngine.decelerateCurve,
       alignment: Alignment.topCenter,
       child: FadeTransition(
         opacity: _opacityAnimation,

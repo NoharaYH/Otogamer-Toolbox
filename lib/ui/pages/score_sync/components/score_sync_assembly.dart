@@ -53,10 +53,7 @@ class ScoreSyncAssembly extends StatelessWidget {
           child: Column(
             children: [
               // 内容动画器切换
-              TransferContentAnimator(
-                duration: UiSizes.defaultAnimationDuration,
-                child: content,
-              ),
+              TransferContentAnimator(child: content),
 
               // 日志面板管理
               SyncLogPanel(

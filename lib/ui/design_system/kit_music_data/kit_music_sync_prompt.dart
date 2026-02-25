@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../logic/mai_music_data/data_sync/mai_sync_handler.dart';
 import '../visual_skins/skin_extension.dart';
 import '../constants/sizes.dart';
+import '../kit_shared/confirm_button.dart';
 
 class KitMusicSyncPrompt extends StatefulWidget {
   final SyncPhase phase;
@@ -152,77 +153,55 @@ class _KitMusicSyncPromptState extends State<KitMusicSyncPrompt> {
   }
 
   Widget _buildPromptContent(SkinExtension skin) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Text(
-          '曲库内暂无歌曲数据\n是否同步？',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 18,
-            color: Color(0xFF555555),
-            height: 1.5,
-            fontWeight: FontWeight.bold,
+    return SizedBox(
+      height: 140,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            '曲库内暂无歌曲数据\n是否同步？',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              color: Color(0xFF555555),
+              height: 1.5,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: UiSizes.spaceXL),
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _hasStarted = true;
-                  });
-                  widget.onConfirm();
-                },
-                child: Container(
+          const SizedBox(height: UiSizes.spaceXL),
+          Row(
+            children: [
+              Expanded(
+                child: ConfirmButton(
+                  text: '确认',
                   height: 48,
-                  decoration: BoxDecoration(
-                    color: skin.medium,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    '确认',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  fontSize: 16,
+                  onPressed: () {
+                    setState(() {
+                      _hasStarted = true;
+                    });
+                    widget.onConfirm();
+                  },
                 ),
               ),
-            ),
-            const SizedBox(width: UiSizes.spaceS),
-            Expanded(
-              child: GestureDetector(
-                onTap: () async {
-                  setState(() => _isVisible = false);
-                  await Future.delayed(const Duration(milliseconds: 150));
-                  widget.onCancel();
-                },
-                child: Container(
+              const SizedBox(width: UiSizes.spaceS),
+              Expanded(
+                child: ConfirmButton(
+                  text: '取消',
                   height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF757585),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Text(
-                    '取消',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  fontSize: 16,
+                  onPressed: () async {
+                    setState(() => _isVisible = false);
+                    await Future.delayed(const Duration(milliseconds: 150));
+                    widget.onCancel();
+                  },
                 ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -251,46 +230,50 @@ class _KitMusicSyncPromptState extends State<KitMusicSyncPrompt> {
       }
     }
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Center(
-          child: Text(
-            '正在同步中$dots',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF555555),
+    return SizedBox(
+      height: 140,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Center(
+            child: Text(
+              '正在同步中$dots',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF555555),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              leftText,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF777777)),
-            ),
-            Text(
-              rightText,
-              style: const TextStyle(fontSize: 14, color: Color(0xFF777777)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: _isTyping || widget.phase == SyncPhase.pulling
-                ? 0.0
-                : progressValue,
-            minHeight: 6,
-            backgroundColor: skin.light.withValues(alpha: 0.3),
-            valueColor: AlwaysStoppedAnimation<Color>(skin.medium),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                leftText,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF777777)),
+              ),
+              Text(
+                rightText,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF777777)),
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: _isTyping || widget.phase == SyncPhase.pulling
+                  ? 0.0
+                  : progressValue,
+              minHeight: 6,
+              backgroundColor: skin.light.withValues(alpha: 0.3),
+              valueColor: AlwaysStoppedAnimation<Color>(skin.medium),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

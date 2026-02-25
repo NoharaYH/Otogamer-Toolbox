@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'kit_bounce_scaler.dart';
 
 /// 统一圆形操作按钮（如设置、菜单开关等）
 class KitActionCircle extends StatelessWidget {
@@ -17,7 +18,7 @@ class KitActionCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return KitBounceScaler(
       onTap: onTap,
       child: Container(
         width: 32.0,

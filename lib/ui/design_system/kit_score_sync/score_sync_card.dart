@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../application/transfer/transfer_provider.dart';
 import '../constants/sizes.dart';
 import 'score_sync_mode_tabs.dart';
+import '../kit_shared/kit_animation_engine.dart';
 
 /// 成绩同步专用卡片容器
 /// 封装了模式切换 Tabs 以及卡片的基础装饰属性
@@ -23,8 +24,8 @@ class ScoreSyncCard extends StatelessWidget {
     return Consumer<TransferProvider>(
       builder: (context, provider, _) {
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.fastOutSlowIn,
+          duration: KitAnimationEngine.expandDuration,
+          curve: KitAnimationEngine.decelerateCurve,
           width: double.infinity,
           margin: EdgeInsets.only(
             left: UiSizes.spaceS,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/sizes.dart';
+import '../kit_shared/kit_animation_engine.dart';
 
 /// 同步状态日志面板
 ///
@@ -104,8 +105,8 @@ class _SyncLogPanelState extends State<SyncLogPanel> {
     const double borderRadius = UiSizes.buttonBorderRadius;
 
     return AnimatedSize(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.fastOutSlowIn, // 平滑曲线，防止抖动
+      duration: KitAnimationEngine.expandDuration,
+      curve: KitAnimationEngine.decelerateCurve, // 平滑曲线，防止抖动
       child: !_isShown
           ? const SizedBox(width: double.infinity, height: 0)
           : Padding(
@@ -116,8 +117,8 @@ class _SyncLogPanelState extends State<SyncLogPanel> {
                 0,
               ),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.fastOutSlowIn,
+                duration: KitAnimationEngine.expandDuration,
+                curve: KitAnimationEngine.decelerateCurve,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: const Color(0xFF323232),
@@ -144,8 +145,8 @@ class _SyncLogPanelState extends State<SyncLogPanel> {
 
                     // 日志内容区
                     AnimatedSize(
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.fastOutSlowIn,
+                      duration: KitAnimationEngine.expandDuration,
+                      curve: KitAnimationEngine.decelerateCurve,
                       child: _isActuallyExpanded
                           ? ConstrainedBox(
                               // 【回归标准】高度恢复到 280，适配新的大框间距

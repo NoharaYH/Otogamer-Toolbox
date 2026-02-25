@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/sizes.dart';
+import '../kit_shared/kit_bounce_scaler.dart';
+import '../kit_shared/kit_animation_engine.dart';
 
 class ScoreSyncTokenField extends StatefulWidget {
   final TextEditingController controller;
@@ -20,9 +22,57 @@ class ScoreSyncTokenField extends StatefulWidget {
   State<ScoreSyncTokenField> createState() => _ScoreSyncTokenFieldState();
 }
 
-class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField> {
+class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField>
+    with SingleTickerProviderStateMixin {
   bool _showToken = false;
-  String? _pendingClipboard;
+  String? _currentClipboard;
+
+  late AnimationController _pasteBoxController;
+  late Animation<double> _sizeFactor;
+  late Animation<double> _opacityFactor;
+
+  @override
+  void initState() {
+    super.initState();
+    _pasteBoxController = AnimationController(
+      vsync: this,
+      duration: KitAnimationEngine.expandDuration,
+      reverseDuration: KitAnimationEngine.collapseDuration,
+    );
+
+    _sizeFactor = CurvedAnimation(
+      parent: _pasteBoxController,
+      curve: KitAnimationEngine.decelerateCurve,
+      reverseCurve: KitAnimationEngine.accelerateCurve,
+    );
+
+    // Fade in starts after size reaches 30% (0.3), finishes at 100% (1.0).
+    // During reverse, it fades out completely before size shrinks back to 30%.
+    _opacityFactor = CurvedAnimation(
+      parent: _pasteBoxController,
+      curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+      reverseCurve: const Interval(0.3, 1.0, curve: Curves.easeIn),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pasteBoxController.dispose();
+    super.dispose();
+  }
+
+  void _showPasteBox(String text) {
+    setState(() => _currentClipboard = text);
+    _pasteBoxController.forward();
+  }
+
+  void _hidePasteBox() {
+    _pasteBoxController.reverse().then((_) {
+      if (mounted && _pasteBoxController.isDismissed) {
+        setState(() => _currentClipboard = null);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +107,7 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField> {
                     controller: widget.controller,
                     obscureText: !_showToken,
                     onChanged: (val) {
-                      setState(() => _pendingClipboard = null);
+                      _hidePasteBox();
                       widget.onChanged?.call();
                     },
                     decoration: InputDecoration(
@@ -74,7 +124,7 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField> {
                 ),
                 Padding(
                   padding: const EdgeInsets.only(right: 8.0, left: 4.0),
-                  child: GestureDetector(
+                  child: KitBounceScaler(
                     onTap: () => setState(() => _showToken = !_showToken),
                     child: Icon(
                       _showToken ? Icons.visibility : Icons.visibility_off,
@@ -86,10 +136,10 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField> {
                 if (hasContent)
                   Padding(
                     padding: const EdgeInsets.only(right: 4.0),
-                    child: GestureDetector(
+                    child: KitBounceScaler(
                       onTap: () {
                         widget.controller.clear();
-                        setState(() => _pendingClipboard = null);
+                        _hidePasteBox();
                         widget.onChanged?.call();
                       },
                       child: const Icon(
@@ -102,7 +152,7 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField> {
                 else
                   Padding(
                     padding: const EdgeInsets.only(right: 4.0),
-                    child: GestureDetector(
+                    child: KitBounceScaler(
                       onTap: _handlePasteWithConfirmation,
                       child: const Icon(
                         Icons.content_paste,
@@ -115,67 +165,28 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField> {
             ),
           ),
         ),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 350),
-          switchInCurve: Curves.easeInOut,
-          switchOutCurve: Curves.easeInOut,
-          layoutBuilder: (currentChild, previousChildren) {
-            return Stack(
-              alignment: Alignment.topCenter,
-              clipBehavior: Clip.none,
-              children: <Widget>[
-                ...previousChildren,
-                if (currentChild != null) currentChild,
-              ],
-            );
-          },
-          transitionBuilder: (child, animation) {
-            if (child.key == const ValueKey('empty_clipboard')) {
-              return child;
-            }
-            return SizeTransition(
-              sizeFactor: animation,
-              axisAlignment: -1.0,
-              child: FadeTransition(
-                opacity: CurvedAnimation(
-                  parent: animation,
-                  curve: const Interval(0.4, 1.0),
-                ),
-                child: Container(
-                  margin: const EdgeInsets.only(
-                    bottom: UiSizes.atomicComponentGap,
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(
-                      color: Colors.grey.withValues(alpha: 0.5),
-                    ),
-                    borderRadius: BorderRadius.circular(
-                      UiSizes.buttonBorderRadius,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: UiSizes.atomicComponentGap,
-                      horizontal: UiSizes.cardContentPadding,
-                    ),
-                    child: child,
-                  ),
-                ),
+        SizeTransition(
+          sizeFactor: _sizeFactor,
+          axisAlignment: -1.0, // Top aligned, expands downwards linearly
+          child: FadeTransition(
+            opacity: _opacityFactor,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: UiSizes.atomicComponentGap),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.5)),
+                borderRadius: BorderRadius.circular(UiSizes.buttonBorderRadius),
               ),
-            );
-          },
-          child: _pendingClipboard != null
-              ? KeyedSubtree(
-                  key: ValueKey('paste_box_$_pendingClipboard'),
-                  child: _buildPasteConfirmBoxContent(_pendingClipboard!),
-                )
-              : const SizedBox(
-                  key: ValueKey('empty_clipboard'),
-                  width: double.infinity,
-                  height: 0,
-                ),
+              padding: const EdgeInsets.symmetric(
+                vertical: UiSizes.atomicComponentGap,
+                horizontal: UiSizes.cardContentPadding,
+              ),
+              child: _currentClipboard != null
+                  ? _buildPasteConfirmBoxContent(_currentClipboard!)
+                  : const SizedBox.shrink(),
+            ),
+          ),
         ),
       ],
     );
@@ -186,7 +197,7 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField> {
     final text = data?.text;
     if (text != null && text.isNotEmpty) {
       if (!mounted) return;
-      setState(() => _pendingClipboard = text);
+      _showPasteBox(text);
     }
   }
 
@@ -225,10 +236,10 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              GestureDetector(
+              KitBounceScaler(
                 onTap: () {
-                  final textToPaste = _pendingClipboard!;
-                  setState(() => _pendingClipboard = null);
+                  final textToPaste = _currentClipboard!;
+                  _hidePasteBox();
                   widget.controller.text = textToPaste;
                   widget.onPasteConfirmed?.call(textToPaste);
                 },
@@ -242,8 +253,8 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField> {
                 ),
               ),
               const SizedBox(width: UiSizes.spaceXS),
-              GestureDetector(
-                onTap: () => setState(() => _pendingClipboard = null),
+              KitBounceScaler(
+                onTap: _hidePasteBox,
                 child: Container(
                   padding: const EdgeInsets.all(UiSizes.spaceXXS),
                   decoration: BoxDecoration(

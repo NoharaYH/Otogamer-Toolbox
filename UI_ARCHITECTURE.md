@@ -107,6 +107,10 @@ class GamePageItem {
 - **命名规范**：所有设计系统组件必须以 `Kit` 或该业务包的前缀命名。
 - **逻辑隔离**：`kit` 层组件不得持有 `Provider` 业务状态，只接受原始数据与回调。
 - **自适应**：所有垂直边距必须通过 `UiSizes.getTopMarginWithSafeArea` 动态获取，以兼容不同规格的 Notch/Dynamic Island。
+- **统一交互组件**：所有类似确认、取消等基础交互按钮组件，必须统一从 `kit_shared/confirm_button.dart` 等原子路径引入，**REJECT** 在业务包内散装实现 `GestureDetector` + `Container` 容器。
+- **全局物理反馈**：所有自定义可点击交互组件 (如圆圈、纯图按钮的缩放反馈)，必须遵循“按下即时收缩、松开即时回正”的物理反馈。此动效 **ONLY** 允许通过包裹 `kit_shared/kit_bounce_scaler.dart` 实现包装。**REJECT** 各业务线独立实现 `ScaleTransition` 或手势识别逻辑。
+- **层级动效规律**：所有涉及到层级交替（展现与销毁）的滑入滑出或淡入淡出动效，必须从 `kit_shared/kit_animation_engine.dart` 摄取标准的曲线与时长（如展出使用 600ms `easeOutQuart`），**REJECT** 使用魔数硬编码的 Curve。
+- **层级动效约束**：所有涉及到层级交替的淡入淡出效果，**必须 ONLY** 在透明度 (Opacity) 层面进行调整。**REJECT** 因高度、边距变化或动态大小 (`AnimatedSize`、`AnimatedCrossFade` 挤压等) 引起的 DOM 结构与物理容器体积跳变。
 
 ---
 

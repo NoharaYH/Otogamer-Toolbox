@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../visual_skins/skin_extension.dart';
 import '../constants/sizes.dart';
+import 'kit_bounce_scaler.dart';
 
 /// 按钮状态枚举
 enum ConfirmButtonState {
@@ -35,46 +36,10 @@ class ConfirmButton extends StatefulWidget {
   State<ConfirmButton> createState() => _ConfirmButtonState();
 }
 
-class _ConfirmButtonState extends State<ConfirmButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 60),
-    );
-
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.9,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _ConfirmButtonState extends State<ConfirmButton> {
   // Loaded 状态优先级最高，直接阻塞交互
   bool get _isInteractive =>
       widget.state != ConfirmButtonState.loading && widget.onPressed != null;
-
-  void _onPointerDown(PointerDownEvent event) {
-    if (_isInteractive) {
-      _controller.forward();
-    }
-  }
-
-  void _onPointerUp(PointerEvent event) {
-    if (_isInteractive) {
-      _controller.reverse();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,70 +61,62 @@ class _ConfirmButtonState extends State<ConfirmButton>
       buttonColor = baseColor;
     }
 
-    return Listener(
-      onPointerDown: _onPointerDown,
-      onPointerUp: _onPointerUp,
-      onPointerCancel: _onPointerUp,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: _isInteractive ? widget.onPressed : null,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: AnimatedContainer(
+    return KitBounceScaler(
+      onTap: _isInteractive ? widget.onPressed : null,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: widget.width,
+        height:
+            widget.height ??
+            (widget.padding == null ? UiSizes.inputFieldHeight : null),
+        padding:
+            widget.padding ??
+            (widget.height == null
+                ? const EdgeInsets.symmetric(horizontal: 16)
+                : null),
+        decoration: BoxDecoration(
+          color: buttonColor,
+          borderRadius: BorderRadius.circular(UiSizes.buttonBorderRadius),
+          boxShadow: null,
+        ),
+        child: Center(
+          child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 150),
-            width: widget.width,
-            height:
-                widget.height ??
-                (widget.padding == null ? UiSizes.inputFieldHeight : null),
-            padding:
-                widget.padding ??
-                (widget.height == null
-                    ? const EdgeInsets.symmetric(horizontal: 16)
-                    : null),
-            decoration: BoxDecoration(
-              color: buttonColor,
-              borderRadius: BorderRadius.circular(UiSizes.buttonBorderRadius),
-              boxShadow: null,
-            ),
-            child: Center(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 150),
-                child: showLoading
-                    ? SizedBox(
-                        key: const ValueKey('loading'),
-                        width: widget.fontSize * 1.5,
-                        height: widget.fontSize * 1.5,
-                        child: const CircularProgressIndicator(
+            child: showLoading
+                ? SizedBox(
+                    key: const ValueKey('loading'),
+                    width: widget.fontSize * 1.5,
+                    height: widget.fontSize * 1.5,
+                    child: const CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 3, // 稍微加粗，更醒目
+                    ),
+                  )
+                : Row(
+                    key: const ValueKey('content'),
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (widget.icon != null) ...[
+                        Icon(
+                          widget.icon,
                           color: Colors.white,
-                          strokeWidth: 3, // 稍微加粗，更醒目
+                          size: widget.fontSize * 1.2,
                         ),
-                      )
-                    : Row(
-                        key: const ValueKey('content'),
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (widget.icon != null) ...[
-                            Icon(
-                              widget.icon,
-                              color: Colors.white,
-                              size: widget.fontSize * 1.2,
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                          Text(
-                            widget.text,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: widget.fontSize,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        widget.text,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: widget.fontSize,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-              ),
-            ),
+                    ],
+                  ),
           ),
         ),
       ),
