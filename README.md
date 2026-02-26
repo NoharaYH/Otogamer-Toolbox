@@ -1,4 +1,4 @@
-# Otogamer-Toolbox (音游工具箱)
+# OtoKit (音游工具箱)
 
 一款高颜值的 Maimai & Chunithm 游戏工具箱。
 基于 Flutter 开发，主打流畅的物理动画，提供查分、推分及数据迁移等功能。

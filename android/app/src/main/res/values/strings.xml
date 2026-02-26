@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">街机音游工具箱</string>
+    <string name="app_name">OtoKit</string>
     <string name="menu_item_switch">Proxy</string>
     <string name="menu_item_about">About</string>
     <string name="menu_item_exit">Exit</string>

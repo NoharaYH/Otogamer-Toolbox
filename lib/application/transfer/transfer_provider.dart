@@ -35,7 +35,7 @@ class TransferProvider extends ChangeNotifier {
   String? _successMessage;
   final Map<int, String> _gameLogs = {};
 
-  static const _channel = MethodChannel('com.nohara.otogamer/vpn');
+  static const _channel = MethodChannel('com.noharayh.otokit/vpn');
 
   // Getters
   bool get isLoading => _isLoading;

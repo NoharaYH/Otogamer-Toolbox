@@ -33,7 +33,7 @@
             android:value="2" />
 
         <service
-            android:name="com.noharayh.toolbox.vpn.core.LocalVpnService"
+            android:name="com.noharayh.otokit.vpn.core.LocalVpnService"
             android:permission="android.permission.BIND_VPN_SERVICE"
             android:exported="false">
             <intent-filter>
@@ -42,11 +42,11 @@
         </service>
 
         <service 
-            android:name="com.noharayh.toolbox.server.HttpServerService"
+            android:name="com.noharayh.otokit.server.HttpServerService"
             android:exported="false" />
 
         <service 
-            android:name="com.noharayh.toolbox.notification.NotificationUtil"
+            android:name="com.noharayh.otokit.notification.NotificationUtil"
             android:enabled="true"
             android:exported="false" />
 
