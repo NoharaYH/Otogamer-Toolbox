@@ -69,6 +69,10 @@ class TransferProvider extends ChangeNotifier {
       switch (call.method) {
         case 'onStatusChanged':
           _isVpnRunning = call.arguments['isRunning'];
+          if (!_isVpnRunning) {
+            _isTracking = false;
+            _trackingGameType = null;
+          }
           final status = call.arguments['status'] as String?;
           if (status != null) _successMessage = status;
           notifyListeners();

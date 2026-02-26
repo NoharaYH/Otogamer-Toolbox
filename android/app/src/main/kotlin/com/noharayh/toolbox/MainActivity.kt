@@ -115,6 +115,10 @@ class MainActivity : FlutterActivity(),
     override fun onError(e: Exception) {
         runOnUiThread {
             methodChannel?.invokeMethod("onLogReceived", "[ERROR] ${e.message}")
+            methodChannel?.invokeMethod("onStatusChanged", mapOf(
+                "status" to null,
+                "isRunning" to false
+            ))
         }
     }
 
