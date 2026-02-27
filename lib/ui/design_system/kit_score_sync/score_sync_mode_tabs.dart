@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/colors.dart';
 import '../visual_skins/skin_extension.dart';
 import '../constants/sizes.dart';
 import '../constants/animations.dart';
@@ -18,20 +19,20 @@ class ScoreSyncModeTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final skin = Theme.of(context).extension<SkinExtension>();
-    final Color activeColor = skin?.dark ?? Colors.pink;
+    final Color activeColor = skin?.dark ?? UiColors.grey500;
 
     return IgnorePointer(
       ignoring: isDisabled,
       child: TweenAnimationBuilder<double>(
         duration: const Duration(milliseconds: 150),
         tween: Tween<double>(
-          begin: isDisabled ? 0.5 : 0.0,
-          end: isDisabled ? 0.5 : 0.0,
+          begin: isDisabled ? 1.0 : 0.0,
+          end: isDisabled ? 1.0 : 0.0,
         ),
         builder: (context, value, child) {
           return ColorFiltered(
             colorFilter: ColorFilter.mode(
-              Colors.black.withValues(alpha: value),
+              Color.lerp(UiColors.transparent, UiColors.disabledMask, value)!,
               BlendMode.srcATop,
             ),
             child: child,
@@ -43,7 +44,7 @@ class ScoreSyncModeTabs extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: UiSizes.atomicComponentGap),
           padding: const EdgeInsets.all(UiSizes.spaceXXS),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: UiColors.black.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(UiSizes.cardRadius),
           ),
           child: Row(
@@ -71,12 +72,12 @@ class ScoreSyncModeTabs extends StatelessWidget {
               AnimatedContainer(
                 duration: UiAnimations.fast,
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
+                  color: isSelected ? UiColors.white : UiColors.transparent,
                   borderRadius: BorderRadius.circular(UiSizes.buttonRadius - 2),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: UiColors.black.withValues(alpha: 0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -88,7 +89,9 @@ class ScoreSyncModeTabs extends StatelessWidget {
                 child: AnimatedDefaultTextStyle(
                   duration: UiAnimations.fast,
                   style: TextStyle(
-                    color: isSelected ? activeColor : Colors.black54,
+                    color: isSelected
+                        ? activeColor
+                        : UiColors.black.withValues(alpha: 0.54),
                     fontFamily: 'JiangCheng',
                     fontWeight: FontWeight.bold,
                     fontSize: 14,

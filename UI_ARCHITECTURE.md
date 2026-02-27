@@ -117,8 +117,8 @@ class GamePageItem {
 
 ### 2. 交互状态
 
-- **Disabled**：应通过 `medium.withOpacity(0.4)` 或专门的 `inactiveToken` 派生，禁止使用 Material 默认灰。
-- **Feedback**：点击变暗效果应由 `lerp(baseColor, Colors.black, factor)` 生成，确保色相调性一致。
+- **Disabled**：所有组件的不可用状态必须统一叠加 60% 透明度的纯黑遮罩 (`UiColors.disabledMask`)，禁止随意使用灰色 (`Colors.grey`) 降低透明度或完全脱离主题底色。
+- **Feedback**：点击变暗效果应由 `lerp(baseColor, UiColors.black, factor)` 生成，确保色相调性一致。
 
 ---
 

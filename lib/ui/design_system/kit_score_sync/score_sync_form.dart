@@ -45,6 +45,7 @@ class ScoreSyncForm extends StatelessWidget {
             hint: UiStrings.inputDivingFishToken,
             onChanged: onDfChanged,
             onPasteConfirmed: onDfPaste,
+            isDisabled: isDisabled,
           ),
         if (needsLxns)
           ScoreSyncTokenField(
@@ -52,6 +53,7 @@ class ScoreSyncForm extends StatelessWidget {
             hint: UiStrings.inputLxnsToken,
             onChanged: onLxnsChanged,
             onPasteConfirmed: onLxnsPaste,
+            isDisabled: isDisabled,
           ),
         SizedBox(height: UiSizes.atomicComponentGap),
         ConfirmButton(

@@ -55,13 +55,12 @@ class _ConfirmButtonState extends State<ConfirmButton> {
       // 加载中：亮度严格降低 50%
       buttonColor = Color.lerp(baseColor, UiColors.black, 0.5)!;
       showLoading = true;
-    } else if (widget.state == ConfirmButtonState.disabled ||
-        widget.onPressed == null) {
-      // 禁用：灰色 (Disabled 状态移除，由 onPressed 是否为空决定)
-      buttonColor = UiColors.grey400.withValues(alpha: 0.4);
     } else {
       buttonColor = baseColor;
     }
+
+    final bool isDisabled =
+        widget.state == ConfirmButtonState.disabled || widget.onPressed == null;
 
     if (widget.state == ConfirmButtonState.hidden) {
       return const SizedBox.shrink();
@@ -88,6 +87,14 @@ class _ConfirmButtonState extends State<ConfirmButton> {
           ),
           boxShadow: null,
         ),
+        foregroundDecoration: isDisabled
+            ? BoxDecoration(
+                color: UiColors.disabledMask,
+                borderRadius: BorderRadius.circular(
+                  widget.borderRadius ?? UiSizes.buttonRadius,
+                ),
+              )
+            : null,
         child: Center(
           child: AnimatedSwitcher(
             duration: UiAnimations.fast,

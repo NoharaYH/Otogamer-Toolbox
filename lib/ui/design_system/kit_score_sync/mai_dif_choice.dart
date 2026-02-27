@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/colors.dart';
 import '../constants/assets.dart';
 import '../constants/sizes.dart';
 import '../kit_shared/confirm_button.dart';
@@ -81,13 +82,17 @@ class _MaiDifChoiceState extends State<MaiDifChoice> {
           child: TweenAnimationBuilder<double>(
             duration: const Duration(milliseconds: 150),
             tween: Tween<double>(
-              begin: (widget.isLoading || widget.isDisabled) ? 0.5 : 0.0,
-              end: (widget.isLoading || widget.isDisabled) ? 0.5 : 0.0,
+              begin: (widget.isLoading || widget.isDisabled) ? 1.0 : 0.0,
+              end: (widget.isLoading || widget.isDisabled) ? 1.0 : 0.0,
             ),
             builder: (context, value, child) {
               return ColorFiltered(
                 colorFilter: ColorFilter.mode(
-                  Colors.black.withValues(alpha: value),
+                  Color.lerp(
+                    UiColors.transparent,
+                    UiColors.disabledMask,
+                    value,
+                  )!,
                   BlendMode.srcATop,
                 ),
                 child: child,
@@ -273,7 +278,7 @@ class _ChuDifChoiceState extends State<ChuDifChoice> {
             padding: EdgeInsets.all(UiSizes.spaceXL),
             child: Text(
               '中二难度选择器（待开发）',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(fontSize: 16, color: UiColors.grey500),
             ),
           ),
         ),

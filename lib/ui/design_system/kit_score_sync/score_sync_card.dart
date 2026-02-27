@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/colors.dart';
 import 'package:provider/provider.dart';
 import '../../../../application/transfer/transfer_provider.dart';
 import '../constants/sizes.dart';
@@ -35,11 +36,13 @@ class ScoreSyncCard extends StatelessWidget {
                 : UiSizes.getCardBottomMargin(context),
           ),
           decoration: BoxDecoration(
-            color: const Color(0xCCFFFFFF),
+            color: UiColors.white.withValues(
+              alpha: 0.8,
+            ), // 0xCCFFFFFF -> 80% white
             borderRadius: BorderRadius.circular(UiSizes.cardRadius),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: UiColors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -61,7 +64,7 @@ class ScoreSyncCard extends StatelessWidget {
                   ScoreSyncModeTabs(
                     mode: mode,
                     onModeChanged: onModeChanged,
-                    isDisabled: false,
+                    isDisabled: provider.isTracking,
                   ),
                   child,
                 ],
