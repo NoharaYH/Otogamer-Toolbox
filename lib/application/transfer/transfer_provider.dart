@@ -9,6 +9,7 @@ import 'package:app_links/app_links.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../kernel/services/storage_service.dart';
 import '../../kernel/services/api_service.dart';
+import '../../ui/design_system/constants/strings.dart';
 
 /// TransferProvider：纯 UI 状态中转层。
 @injectable
@@ -103,14 +104,14 @@ class TransferProvider extends ChangeNotifier {
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
-      _errorMessage = "无法打开授权页面";
+      _errorMessage = UiStrings.errOAuthNoLaunch;
       notifyListeners();
     }
   }
 
   Future<void> _handleLxnsOAuth(String code) async {
     if (_pkceVerifier == null) {
-      _errorMessage = "授权校验失败：丢失 PKCE 凭证";
+      _errorMessage = UiStrings.errOAuthNoVerifier;
       notifyListeners();
       return;
     }
@@ -136,9 +137,9 @@ class TransferProvider extends ChangeNotifier {
       if (lxnsRefreshToken != null) {
         await _storageService.save("lxns_refresh_token", lxnsRefreshToken!);
       }
-      _successMessage = "落雪 OAuth 授权成功";
+      _successMessage = UiStrings.oauthSuccess;
     } else {
-      _errorMessage = "落雪 OAuth 凭证兑换失败";
+      _errorMessage = UiStrings.oauthExchangeFailed;
     }
 
     _isLoading = false;
@@ -199,7 +200,8 @@ class TransferProvider extends ChangeNotifier {
           // 根据 MainActivity 的推送语义分离业务生命周期：
           // [DONE] 推送: status="传分完成", isRunning=false
           // [ERROR] 推送: status=null, isRunning=false
-          if (status == '传分完成' || (status == null && !_isVpnRunning)) {
+          if (status == UiStrings.syncFinish ||
+              (status == null && !_isVpnRunning)) {
             _isTracking = false;
             // 显式保留 _trackingGameType 以避免 SyncLogPanel 被 auto-hidden 机制强制折叠
             stopVpn(resetState: false);
@@ -236,7 +238,7 @@ class TransferProvider extends ChangeNotifier {
     bool isManually = false,
   }) async {
     if (isManually) {
-      appendLog("[STOP] 传分业务已终止");
+      appendLog("${UiStrings.logTagSystem} ${UiStrings.logSysTerminated}");
     }
     await _channel.invokeMethod('stopVpn');
     if (resetState) {
@@ -273,8 +275,8 @@ class TransferProvider extends ChangeNotifier {
     _gameLogs[gameType] = "";
     notifyListeners();
 
-    appendLog("[START]传分业务挂起");
-    appendLog("[SYSTEM] 正在启动本地代理环境...");
+    appendLog("${UiStrings.logTagSystem} ${UiStrings.logSysStart}");
+    appendLog("${UiStrings.logTagVpn} ${UiStrings.logVpnStarting}");
 
     try {
       await startVpn();
@@ -286,11 +288,11 @@ class TransferProvider extends ChangeNotifier {
       final localProxyUrl = "http://127.0.0.2:8284/$randomStr";
       await Clipboard.setData(ClipboardData(text: localProxyUrl));
 
-      appendLog("[VPN] 服务已启动，正在监听网络包");
-      appendLog("[CLIPBOARD] 本地中转链接已复制，请前往微信打开");
-      appendLog("[HINT] 捕获授权码后，同步将在后台自动完成");
+      appendLog("${UiStrings.logTagVpn} ${UiStrings.logVpnStarted}");
+      appendLog("${UiStrings.logTagClipboard} ${UiStrings.logClipReady}");
+      appendLog(UiStrings.logWaitLink);
     } catch (e) {
-      appendLog("[ERROR] 初始化失败: $e");
+      appendLog(UiStrings.logErrVpnStart.replaceAll("{0}", e.toString()));
     }
   }
 
@@ -350,13 +352,13 @@ class TransferProvider extends ChangeNotifier {
     final needsLxns = mode == 2 || mode == 1;
 
     if (needsDf && dfToken.isEmpty) {
-      _errorMessage = "请输入水鱼 Token";
+      _errorMessage = UiStrings.inputDivingFishToken;
       _isLoading = false;
       notifyListeners();
       return false;
     }
     if (needsLxns && lxnsToken.isEmpty) {
-      _errorMessage = "请输入落雪 Token";
+      _errorMessage = UiStrings.inputLxnsToken;
       _isLoading = false;
       notifyListeners();
       return false;
@@ -369,7 +371,8 @@ class TransferProvider extends ChangeNotifier {
       if (needsDf && !dfSuccess) {
         dfSuccess = await _apiService.validateDivingFishToken(dfToken);
         if (!dfSuccess) {
-          _errorMessage = "水鱼 Token 验证失败";
+          _errorMessage =
+              "${UiStrings.modeDivingFish} ${UiStrings.logTagAuth} 验证失败";
           _isLoading = false;
           notifyListeners();
           return false;
@@ -378,7 +381,7 @@ class TransferProvider extends ChangeNotifier {
       if (needsLxns && !lxnsSuccess) {
         lxnsSuccess = await _apiService.validateLxnsToken(lxnsToken);
         if (!lxnsSuccess) {
-          _errorMessage = "落雪 Token 验证失败";
+          _errorMessage = "${UiStrings.modeLxns} ${UiStrings.logTagAuth} 验证失败";
           _isLoading = false;
           notifyListeners();
           return false;
@@ -395,7 +398,7 @@ class TransferProvider extends ChangeNotifier {
         await _storageService.save(StorageService.kLxnsToken, lxnsToken);
       }
 
-      _successMessage = "验证通过，配置已保存";
+      _successMessage = UiStrings.verifySuccess;
       _isLoading = false;
       notifyListeners();
       return true;

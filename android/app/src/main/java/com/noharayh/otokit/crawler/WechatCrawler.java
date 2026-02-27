@@ -56,11 +56,16 @@ public class WechatCrawler {
 
     private static final MediaType TEXT = MediaType.parse("text/plain");
 
+    private static OkHttpClient client;
     private static final SimpleCookieJar jar = new SimpleCookieJar();
+    private static final Map<Integer, String> diffMap = new HashMap<>();
+    private static final Map<Integer, String> htmlCache = new HashMap<>();
 
     private static String friendCode = null;
 
     public WechatCrawler() {
+        diffMap.put(-1, "用户信息");
+        diffMap.put(-2, "最近游玩");
         diffMap.put(0, "Basic");
         diffMap.put(1, "Advance");
         diffMap.put(2, "Expert");
@@ -85,9 +90,9 @@ public class WechatCrawler {
 
         try (Response response = client.newCall(request).execute()) {
             String result = response.body().string();
-            writeLog("[水鱼] " + diffMap.get(diff) + " 状态: " + result);
+            writeLog("[UPLOAD] [水鱼] 上传" + diffMap.get(diff) + "成功");
         } catch (Exception e) {
-            writeLog("[水鱼] " + diffMap.get(diff) + " 上传失败: " + e.getMessage());
+            writeLog("[ERROR] [水鱼] 上传" + diffMap.get(diff) + "失败: 异常 - " + e.getMessage());
         }
     }
 
@@ -97,7 +102,7 @@ public class WechatCrawler {
             fetchFriendCode();
         }
         if (friendCode == null) {
-            writeLog("[落雪] 无法获取 friend_code，跳过上传");
+            writeLog("[SYSTEM] 未获取到 FriendCode，跳过落雪上传");
             return;
         }
 
@@ -113,9 +118,9 @@ public class WechatCrawler {
 
         try (Response response = client.newCall(request).execute()) {
             String result = response.body().string();
-            writeLog("[落雪] " + diffMap.get(diff) + " 状态: " + response.code() + " " + result);
+            writeLog("[UPLOAD] [落雪] 上传" + diffMap.get(diff) + "成功");
         } catch (Exception e) {
-            writeLog("[落雪] " + diffMap.get(diff) + " 上传失败: " + e.getMessage());
+            writeLog("[ERROR] [落雪] 上传" + diffMap.get(diff) + "失败: 异常 - " + e.getMessage());
         }
     }
 
@@ -133,61 +138,100 @@ public class WechatCrawler {
             java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(\\d{12}|\\d{9})").matcher(html);
             if (matcher.find()) {
                 friendCode = matcher.group(1);
-                writeLog("[SYSTEM] 成功识别 Friend Code: " + friendCode);
+                writeLog("[SYSTEM] 识别到 FriendCode: " + friendCode);
             } else {
-                writeLog("[ERROR] 未能在页面中找到 Friend Code");
+                writeLog("[ERROR] 获取用户信息失败: 404 - 未能在页面中找到 Friend Code");
             }
         } catch (Exception e) {
-            writeLog("[ERROR] 获取 Friend Code 异常: " + e.getMessage());
+            writeLog("[ERROR] 获取用户信息失败: 网络 - 获取 Friend Code 异常: " + e.getMessage());
         }
     }
+
 
     private static void fetchAndUploadData(String username, String password, Set<Integer> difficulties) {
-        friendCode = null; // 重置
+        htmlCache.clear();
+        friendCode = null;
+
+        writeLog("[SYSTEM] 开始获取用户成绩");
+
+        // 舞萌 DX 额外抓取项：用户信息 (解析 friendCode) 与 最近游玩
+        if (com.noharayh.otokit.DataContext.GameType == 0) {
+            fetchSingleHtmlToCache(-1); // 用户资料页
+            sleep(1000);
+            fetchSingleHtmlToCache(-2); // 最近游玩页
+            sleep(1000);
+        }
+
         for (Integer diff : difficulties) {
             if (CrawlerCaller.isStopped) {
-                writeLog("[SYSTEM] 检测到传分进程已由用户手动终止");
+                writeLog("[SYSTEM] 传分业务终止");
                 return;
             }
-            fetchAndUploadRawData(username, password, diff, 1);
-            try { Thread.sleep(1200); } catch (InterruptedException e) { }
+            fetchSingleHtmlToCache(diff);
+            sleep(1200); // 抓取间隔保护
         }
+
+        // 阶段 2: 集中上传水鱼
+        if (htmlCache.isEmpty()) {
+            writeLog("[ERROR] 获取成绩失败: 异常 - 未获取到有效 HTML 数据，取消上传");
+            return;
+        }
+
+        writeLog("[SYSTEM] 成绩获取完毕，开始上传至目标平台...");
+        writeLog("[SYSTEM] 开始上传至水鱼服务器");
+        for (Map.Entry<Integer, String> entry : htmlCache.entrySet()) {
+            if (CrawlerCaller.isStopped) return;
+            uploadToDivingFish(entry.getKey(), entry.getValue(), username);
+            // uploadToLxns(entry.getKey(), entry.getValue(), password); // 当前仅关注水鱼
+        }
+
+//        writeLog("[DONE] 水鱼同步流程结束");
     }
 
-    private static void fetchAndUploadRawData(String username, String password, Integer diff, Integer retryCount) {
+    private static void fetchSingleHtmlToCache(Integer diff) {
         if (CrawlerCaller.isStopped) return;
-        writeLog("开始获取 " + diffMap.get(diff) + " 难度的数据");
         
         String baseUrl = (com.noharayh.otokit.DataContext.GameType == 0)
-            ? "https://maimai.wahlap.com/maimai-mobile/"
-            : "https://chunithm.wahlap.com/mobile/";
-            
+                ? "https://maimai.wahlap.com/maimai-mobile/"
+                : "https://chunithm.wahlap.com/mobile/";
+
         String url;
         if (com.noharayh.otokit.DataContext.GameType == 0) {
-            url = (diff == 5) 
-                ? baseUrl + "record/musicGenre/search/?genre=99&diff=10"
-                : baseUrl + "record/musicSort/search/?search=V&sort=1&playCheck=on&diff=" + diff;
+            if (diff == -1) url = baseUrl + "playerData/";
+            else if (diff == -2) url = baseUrl + "record/";
+            else if (diff == 5) url = baseUrl + "record/musicGenre/search/?genre=99&diff=10";
+            else url = baseUrl + "record/musicSort/search/?search=V&sort=1&playCheck=on&diff=" + diff;
         } else {
-            // Chunithm 逻辑按 Docs 描述
-            url = (diff == 5)
-                ? baseUrl + "record/worldsEndList"
-                : baseUrl + "record/musicGenre"; // 需要 POST 参数或特定路由，需进一步确认
+            // Chunithm 路径
+            if (diff == -1) url = baseUrl + "playerData/";
+            else if (diff == -2) url = baseUrl + "record/";
+            else if (diff == 5) url = baseUrl + "record/worldsEndList";
+            else url = baseUrl + "record/musicGenre"; // 中二难度页逻辑复杂，先保留基础路径
         }
 
         Request request = new Request.Builder().url(url).build();
         try (Response response = client.newCall(request).execute()) {
-            String htmlData = Objects.requireNonNull(response.body()).string();
-            writeLog(diffMap.get(diff) + " 原始数据已抓取，正在双向上传...");
-            
-            uploadToDivingFish(diff, htmlData, username);
-            uploadToLxns(diff, htmlData, password);
-        } catch (Exception e) {
-            writeLog("获取 " + diffMap.get(diff) + " 难度数据时出现错误: " + e);
-            if (retryCount < MAX_RETRY_COUNT) {
-                writeLog("进行第" + retryCount + "次重试");
-                fetchAndUploadRawData(username, password, diff, retryCount + 1);
+            String html = Objects.requireNonNull(response.body()).string();
+            if (html.length() < 1000) {
+                writeLog("[WARN] " + diffMap.get(diff) + " 页面响应过短，可能抓取异常");
             }
+            htmlCache.put(diff, html);
+            if (diff == -1) {
+                // 自动尝试提取 friendCode (虽然只传水鱼，但保留基础解析能力)
+                java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(\\d{12}|\\d{9})").matcher(html);
+                if (matcher.find()) {
+                    friendCode = matcher.group(1);
+                    writeLog("[SYSTEM] 识别到 FriendCode: " + friendCode);
+                }
+            }
+            writeLog("[DOWNLOAD] 已获取{" + diffMap.get(diff) + "}数据");
+        } catch (Exception e) {
+            writeLog("[ERROR] 获取{" + diffMap.get(diff) + "}失败: 异常 - " + e.getMessage());
         }
+    }
+
+    private static void sleep(long ms) {
+        try { Thread.sleep(ms); } catch (InterruptedException ignored) {}
     }
 
     protected String getWechatAuthUrl() throws IOException {
@@ -226,11 +270,11 @@ public class WechatCrawler {
         // Login wechat
         try {
             startAuth();
-            writeLog("开始登录net，请稍后...");
+            writeLog("[AUTH] 发起微信登录授权...");
             this.loginWechat(wechatAuthUrl);
-            writeLog("登陆完成");
+            writeLog("[AUTH] 重定向完成，正在获取数据...");
         } catch (Exception error) {
-            writeLog("登陆时出现错误:\n");
+            writeLog("[ERROR] 凭证已失效或未授权");
             onError(error);
             return;
         }
@@ -238,10 +282,10 @@ public class WechatCrawler {
         // Fetch maimai data
         try {
             this.fetchMaimaiData(username, password, difficulties);
-            writeLog("maimai 数据更新完成");
+            writeLog("[SYSTEM] 传分业务完毕");
             finishUpdate();
         } catch (Exception error) {
-            writeLog("maimai 数据更新时出现错误:");
+            writeLog("[ERROR] 网络错误，传分业务终止");
             onError(error);
         }
     }

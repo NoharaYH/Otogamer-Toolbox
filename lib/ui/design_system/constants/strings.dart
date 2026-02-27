@@ -26,18 +26,56 @@ class UiStrings {
   static const String inputLxnsToken = "请输入落雪 API 密钥";
   static const String tokenHint = "捕获授权码后，同步将在后台自动完成";
 
-  // --- Logs ---
+  // --- Log Tags ---
   static const String logTagSystem = "[SYSTEM]";
-  static const String logTagError = "[ERROR]";
-  static const String logTagDone = "[DONE]";
+  static const String logTagVersion = "[VERSION]";
   static const String logTagVpn = "[VPN]";
+  static const String logTagClipboard = "[CLIPBOARD]";
   static const String logTagAuth = "[AUTH]";
-  static const String logTagStop = "[STOP]";
-  static const String logTagCopy = "[COPY]";
+  static const String logTagDownload = "[DOWNLOAD]";
+  static const String logTagUpload = "[UPLOAD]";
+  static const String logTagError = "[ERROR]";
 
-  static const String logCopySuccess = "已将控制台内容复制到剪切板";
-  static const String logVpnStarted = "服务已启动，正在监听网络包";
-  static const String logClipboardReady = "中转链接已复制，请前往微信打开";
+  // --- Log Messages (Normal Flow) ---
+  static const String logSysStart = "传分业务开始";
+  static const String logSysUploadFish = "开始上传至水鱼服务器";
+  static const String logSysUploadLxns = "开始上传至落雪服务器";
+  static const String logSysGetScores = "开始获取用户成绩";
+  static const String logSysGetComplete = "成绩获取完毕，开始上传至目标平台...";
+  static const String logSysEnd = "传分业务完毕";
+
+  static const String logVpnStarting = "启动本地代理服务...";
+  static const String logVpnStarted = "代理服务已启动";
+  static const String logVpnClosed = "代理服务已关闭";
+
+  static const String logClipReady = "链接已复制，请前往微信打开";
+  static const String logWaitLink = "正在等待链接响应...";
+
+  static const String logAuthStart = "发起微信登录授权...";
+  static const String logAuthRedirecting = "已获取授权，正在重定向...";
+  static const String logAuthRedirected = "重定向完成，正在获取数据...";
+
+  // --- Log Messages (Templates) ---
+  // 使用方法：xxx.replaceAll("{0}", arg1).replaceAll("{1}", arg2)
+  static const String logDownloadSuccess = "已获取{0}数据";
+  static const String logUploadSuccess = "[{0}] 上传{1}成功";
+
+  // --- Log Messages (Error & Interruptions) ---
+  static const String logErrGet = "获取{0}失败: {1} - {2}";
+  static const String logErrUpload = "[{0}] 上传{1}失败: {2} - {3}";
+  static const String logErrNet = "网络错误，传分业务终止";
+  static const String logSysTerminated = "传分业务终止";
+  static const String logErrVpnStart = "代理服务启动失败: {0}";
+  static const String logErrClip = "剪贴板写入失败";
+  static const String logErrToken = "凭证已失效或未授权";
+  static const String logErrParse = "解析异常，数据格式不支持";
+  static const String logErrUploadToken = "[{0}] 账号未绑定或Token无效";
+
+  // --- Log Messages (Extensions) ---
+  static const String logSysFriendCode = "识别到 FriendCode: {0}";
+  static const String logSysPause = "传分业务暂停";
+  static const String logSysResume = "传分业务恢复";
+  static const String logClipLogCopied = "已复制日志信息";
 
   // --- Navigation & Core ---
   static const String navScoreSync = "成绩数据同步";
@@ -81,4 +119,17 @@ class UiStrings {
   static const String lxnsDevTokenHint = '请输入落雪开发者中心的 Token';
   static const String lxnsDevTokenHelper = '用于上传成绩到落雪查分器';
   static const String saveConfig = '保存配置';
+
+  // --- OAuth & PKCE ---
+  static const String errOAuthNoLaunch = "无法打开授权页面";
+  static const String errOAuthNoVerifier = "授权校验失败：丢失 PKCE 凭证";
+  static const String oauthSuccess = "落雪 OAuth 授权成功";
+  static const String oauthExchangeFailed = "落雪 OAuth 凭证兑换失败";
+
+  // --- Service Status ---
+  static const String syncFinish = "传分完成";
+  static const String syncTerminated = "传分业务已终止";
+  static const String syncPending = "传分业务挂起";
+  static const String startProxyService = "正在启动本地代理环境...";
+  static const String errInitFailed = "初始化失败: ";
 }
