@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../constants/sizes.dart';
+import '../constants/animations.dart';
+import '../constants/strings.dart';
 import '../kit_shared/kit_animation_engine.dart';
 import '../kit_shared/kit_bounce_scaler.dart';
 
@@ -224,13 +226,13 @@ class _SyncLogPanelState extends State<SyncLogPanel>
     // 胶囊态高度 = 工具栏高 + 上边距
     // 展开态高度 = 计算目标高度
     final double targetHeight = _isExpanded
-        ? UiSizes.getLogPanelMaxHeight(context, UiSizes.syncFormEstimatedHeight)
+        ? UiSizes.getLogPanelMaxHeight(context, 464.0) // 临时硬编码预估高度，后续可进一步优化
         : _toolbarHeight;
 
     final double totalHeight = targetHeight;
 
     // 圆角规格与导入按钮统一 (v2.3)
-    final double radius = UiSizes.buttonBorderRadius;
+    final double radius = UiSizes.buttonRadius;
 
     return AnimatedContainer(
       duration: KitAnimationEngine.expandDuration,
@@ -248,7 +250,7 @@ class _SyncLogPanelState extends State<SyncLogPanel>
             height: targetHeight,
             decoration: BoxDecoration(
               color: const Color(0xFF323232),
-              borderRadius: BorderRadius.circular(radius),
+              borderRadius: BorderRadius.circular(UiSizes.buttonRadius),
             ),
             clipBehavior: Clip.antiAlias,
             child: _buildLogContent(radius),
@@ -316,7 +318,7 @@ class _SyncLogPanelState extends State<SyncLogPanel>
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(
-                              UiSizes.buttonBorderRadius,
+                              UiSizes.buttonRadius,
                             ),
                           ),
                           child: Row(
@@ -324,7 +326,7 @@ class _SyncLogPanelState extends State<SyncLogPanel>
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
-                                '是否结束传分？',
+                                UiStrings.confirmEndTransfer,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
@@ -358,33 +360,37 @@ class _SyncLogPanelState extends State<SyncLogPanel>
 
         // 日志内容区域，展开后淡入
         Expanded(
-          child: AnimatedOpacity(
-            duration: KitAnimationEngine.shortDuration,
-            opacity: _isExpanded ? 1.0 : 0.0,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: RawScrollbar(
-                controller: _scrollController,
-                thumbColor: Colors.white.withValues(alpha: 0.3),
-                radius: const Radius.circular(3),
-                thickness: 3,
-                interactive: true,
-                child: SelectionArea(
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    physics: const BouncingScrollPhysics(),
-                    child: Container(
-                      width: double.infinity,
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        _displayedLines.isEmpty
-                            ? '等待日志输入...'
-                            : _displayedLines.join('\n'),
-                        style: const TextStyle(
-                          color: Color(0xFFEEEEEE),
-                          fontSize: 13,
-                          fontFamily: 'monospace',
-                          height: 1.4,
+          child: AnimatedDefaultTextStyle(
+            duration: UiAnimations.fast,
+            style: const TextStyle(
+              color: Color(0xFFEEEEEE),
+              fontSize: 13,
+              fontFamily: 'monospace',
+              height: 1.4,
+            ),
+            child: AnimatedOpacity(
+              duration: KitAnimationEngine.shortDuration,
+              opacity: _isExpanded ? 1.0 : 0.0,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: RawScrollbar(
+                  controller: _scrollController,
+                  thumbColor: Colors.white.withOpacity(0.3),
+                  radius: const Radius.circular(3),
+                  thickness: 3,
+                  interactive: true,
+                  child: SelectionArea(
+                    child: SingleChildScrollView(
+                      controller: _scrollController,
+                      physics: const BouncingScrollPhysics(),
+                      child: Container(
+                        width: double.infinity,
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          _displayedLines.isEmpty
+                              ? UiStrings.waitingLogs
+                              : _displayedLines.join('\n'),
+                          // Style is now handled by AnimatedDefaultTextStyle
                         ),
                       ),
                     ),
@@ -438,7 +444,9 @@ class _LogIconButton extends StatelessWidget {
                 height: 26,
                 decoration: BoxDecoration(
                   color: Colors.white24,
-                  borderRadius: BorderRadius.circular(outerRadius - 4.0),
+                  borderRadius: BorderRadius.circular(
+                    UiSizes.buttonRadius - 4.0,
+                  ),
                 ),
               ),
             ),

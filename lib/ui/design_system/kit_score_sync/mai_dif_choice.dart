@@ -117,7 +117,7 @@ class _MaiDifChoiceState extends State<MaiDifChoice> {
             ),
           ),
         ),
-        const SizedBox(height: UiSizes.defaultPadding),
+        const SizedBox(height: UiSizes.spaceM),
         ConfirmButton(
           text: '开始导入',
           state: widget.isLoading
@@ -222,7 +222,7 @@ class _DifficultyButtonState extends State<_DifficultyButton> {
             child: Container(
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: BorderRadius.circular(UiSizes.buttonBorderRadius),
+                borderRadius: BorderRadius.circular(UiSizes.buttonRadius),
               ),
               padding: const EdgeInsets.all(UiSizes.spaceXXS),
               alignment: Alignment.center,

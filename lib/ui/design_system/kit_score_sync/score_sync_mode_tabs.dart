@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../visual_skins/skin_extension.dart';
 import '../constants/sizes.dart';
+import '../constants/animations.dart';
 
 class ScoreSyncModeTabs extends StatelessWidget {
   final int mode; // 0: Diving Fish, 1: Both, 2: LXNS
@@ -43,7 +44,7 @@ class ScoreSyncModeTabs extends StatelessWidget {
           padding: const EdgeInsets.all(UiSizes.spaceXXS),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.04),
-            borderRadius: BorderRadius.circular(UiSizes.buttonBorderRadius),
+            borderRadius: BorderRadius.circular(UiSizes.cardRadius),
           ),
           child: Row(
             children: [
@@ -68,12 +69,10 @@ class ScoreSyncModeTabs extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               AnimatedContainer(
-                duration: UiSizes.shortAnimationDuration,
+                duration: UiAnimations.fast,
                 decoration: BoxDecoration(
                   color: isSelected ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(
-                    UiSizes.buttonBorderRadius - 2,
-                  ),
+                  borderRadius: BorderRadius.circular(UiSizes.buttonRadius - 2),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
@@ -87,7 +86,7 @@ class ScoreSyncModeTabs extends StatelessWidget {
               ),
               Center(
                 child: AnimatedDefaultTextStyle(
-                  duration: UiSizes.shortAnimationDuration,
+                  duration: UiAnimations.fast,
                   style: TextStyle(
                     color: isSelected ? activeColor : Colors.black54,
                     fontFamily: 'JiangCheng',

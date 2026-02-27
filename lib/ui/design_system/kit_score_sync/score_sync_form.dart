@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/sizes.dart';
+import '../constants/strings.dart';
 import '../kit_shared/confirm_button.dart';
 import 'score_sync_token_field.dart';
 
@@ -41,24 +42,26 @@ class ScoreSyncForm extends StatelessWidget {
         if (needsDf)
           ScoreSyncTokenField(
             controller: dfController,
-            hint: '请输入水鱼成绩导入Token',
+            hint: UiStrings.inputDivingFishToken,
             onChanged: onDfChanged,
             onPasteConfirmed: onDfPaste,
           ),
         if (needsLxns)
           ScoreSyncTokenField(
             controller: lxnsController,
-            hint: '请输入落雪个人API密钥',
+            hint: UiStrings.inputLxnsToken,
             onChanged: onLxnsChanged,
             onPasteConfirmed: onLxnsPaste,
           ),
         SizedBox(height: UiSizes.atomicComponentGap),
         ConfirmButton(
-          text: isDisabled ? '请等待当前传分进程结束' : '验证并保存Token',
+          text: isDisabled
+              ? UiStrings.waitTransferEnd
+              : UiStrings.verifyAndSave,
           state: isLoading
               ? ConfirmButtonState.loading
               : ConfirmButtonState.ready,
-          borderRadius: UiSizes.buttonBorderRadius,
+          borderRadius: UiSizes.buttonRadius,
           onPressed: isDisabled ? null : onVerify,
         ),
       ],

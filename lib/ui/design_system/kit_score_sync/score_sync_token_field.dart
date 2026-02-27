@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/sizes.dart';
+import '../constants/strings.dart';
 import '../kit_shared/kit_animation_engine.dart';
 import '../kit_shared/kit_bounce_scaler.dart';
 import '../kit_shared/confirmation_box.dart';
@@ -93,7 +94,7 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField>
             decoration: BoxDecoration(
               color: bgColor,
               border: Border.all(color: Colors.grey.withValues(alpha: 0.5)),
-              borderRadius: BorderRadius.circular(UiSizes.buttonBorderRadius),
+              borderRadius: BorderRadius.circular(UiSizes.buttonRadius),
             ),
             padding: const EdgeInsets.only(
               left: UiSizes.cardContentPadding,
@@ -177,7 +178,7 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField>
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border.all(color: Colors.grey.withValues(alpha: 0.5)),
-                borderRadius: BorderRadius.circular(UiSizes.buttonBorderRadius),
+                borderRadius: BorderRadius.circular(UiSizes.buttonRadius),
               ),
               padding: const EdgeInsets.symmetric(
                 vertical: UiSizes.atomicComponentGap,
@@ -186,7 +187,7 @@ class _ScoreSyncTokenFieldState extends State<ScoreSyncTokenField>
               child: _currentClipboard != null
                   ? ConfirmationBox(
                       label: const Text(
-                        '是否要粘贴以下内容？',
+                        UiStrings.pasteConfirm,
                         style: TextStyle(fontSize: 11, color: Colors.grey),
                       ),
                       body: Text(

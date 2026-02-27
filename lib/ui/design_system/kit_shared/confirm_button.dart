@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../visual_skins/skin_extension.dart';
 import '../constants/sizes.dart';
+import '../constants/animations.dart';
 import 'kit_bounce_scaler.dart';
 
 /// 按钮状态枚举
@@ -67,7 +68,7 @@ class _ConfirmButtonState extends State<ConfirmButton> {
       onTap: _isInteractive ? widget.onPressed : null,
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
+        duration: UiAnimations.fast,
         width: widget.width,
         height:
             widget.height ??
@@ -80,13 +81,13 @@ class _ConfirmButtonState extends State<ConfirmButton> {
         decoration: BoxDecoration(
           color: buttonColor,
           borderRadius: BorderRadius.circular(
-            widget.borderRadius ?? UiSizes.buttonBorderRadius,
+            widget.borderRadius ?? UiSizes.buttonRadius,
           ),
           boxShadow: null,
         ),
         child: Center(
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 150),
+            duration: UiAnimations.fast,
             child: showLoading
                 ? SizedBox(
                     key: const ValueKey('loading'),

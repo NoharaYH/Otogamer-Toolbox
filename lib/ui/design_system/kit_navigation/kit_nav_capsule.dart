@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../visual_skins/skin_extension.dart';
-import '../constants/sizes.dart';
+import '../constants/animations.dart';
 
 class KitNavCapsule extends StatefulWidget {
   final IconData icon;
@@ -69,7 +69,7 @@ class _KitNavCapsuleState extends State<KitNavCapsule> {
         duration: const Duration(milliseconds: 150),
         curve: Curves.easeOutQuart,
         child: AnimatedContainer(
-          duration: UiSizes.shortAnimationDuration,
+          duration: UiAnimations.fast,
           curve: Curves.easeOutCubic,
           height: capSize,
           width: widget.isCircle ? capSize : null,
