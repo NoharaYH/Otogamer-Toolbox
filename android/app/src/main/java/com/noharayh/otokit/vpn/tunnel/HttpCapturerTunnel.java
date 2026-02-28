@@ -52,7 +52,7 @@ public class HttpCapturerTunnel extends Tunnel {
         Log.d(TAG, "HTTP url: " + url);
 
         // If it's a auth redirect request, catch it
-        if (url.startsWith("http://tgk-wcaime.wahlap.com/wc_auth/oauth/callback/maimai-dx")) {
+        if (url.startsWith("http://tgk-wcaime.wahlap.com/wc_auth/oauth/callback/")) {
             Log.d(TAG, "Auth request caught!");
             CrawlerCaller.INSTANCE.fetchData(url);
         }

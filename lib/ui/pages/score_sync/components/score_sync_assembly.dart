@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../../../design_system/constants/sizes.dart';
 import '../../../design_system/constants/colors.dart';
-import '../../../design_system/constants/strings.dart';
 import '../../../design_system/visual_skins/skin_extension.dart';
 import '../../../design_system/visual_skins/implementations/maimai_dx/circle_background.dart';
 import '../../../design_system/kit_score_sync/score_sync_card.dart';
@@ -12,7 +11,6 @@ import '../../../design_system/kit_score_sync/score_sync_form.dart';
 import '../../../design_system/kit_score_sync/score_sync_token_field.dart';
 import '../../../design_system/kit_score_sync/sync_log_panel.dart';
 import '../../../design_system/kit_score_sync/content_animator.dart';
-import '../../../design_system/kit_shared/confirm_button.dart';
 import '../../../design_system/kit_score_sync/mai_dif_choice.dart';
 import '../../../design_system/kit_score_sync/chu_dif_choice.dart';
 
@@ -167,6 +165,7 @@ class _ScoreSyncAssemblyState extends State<ScoreSyncAssembly> {
             onImport: (diffs) {
               provider.startImport(
                 gameType: widget.gameType,
+                mode: widget.mode,
                 difficulties: diffs,
               );
             },
@@ -178,6 +177,7 @@ class _ScoreSyncAssemblyState extends State<ScoreSyncAssembly> {
             onImport: (diffs) {
               provider.startImport(
                 gameType: widget.gameType,
+                mode: widget.mode,
                 difficulties: diffs,
               );
             },

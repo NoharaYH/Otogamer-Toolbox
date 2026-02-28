@@ -75,8 +75,9 @@ public class WechatCrawler {
 
     /** 根据当前游戏类型与难度索引，返回本地化标签（支持舞萌/中二区分） */
     private static String getDiffLabel(int diff) {
-        if (diff == 5 && com.noharayh.otokit.DataContext.GameType == 1) {
-            return "World's End";
+        if (com.noharayh.otokit.DataContext.GameType == 1) {
+            if (diff == 4) return "ULTIMA";
+            if (diff == 5) return "World's End";
         }
         return diffMap.getOrDefault(diff, "难度" + diff);
     }
@@ -97,13 +98,13 @@ public class WechatCrawler {
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
             if (code >= 200 && code < 300) {
-                writeLog("[UPLOAD] [水鱼] 上传" + diffMap.get(diff) + "成功 状态: " + code);
+                writeLog("[UPLOAD] [水鱼] 上传" + getDiffLabel(diff) + "成功 状态: " + code);
             } else {
                 String body = response.body() != null ? response.body().string() : "";
-                writeLog("[ERROR] [水鱼] 上传" + diffMap.get(diff) + "失败: {" + code + " " + body + "}");
+                writeLog("[ERROR] [水鱼] 上传" + getDiffLabel(diff) + "失败: {" + code + " " + body + "}");
             }
         } catch (Exception e) {
-            writeLog("[ERROR] [水鱼] 上传" + diffMap.get(diff) + "失败: {异常 " + e.getMessage() + "}");
+            writeLog("[ERROR] [水鱼] 上传" + getDiffLabel(diff) + "失败: {异常 " + e.getMessage() + "}");
         }
     }
 
@@ -128,13 +129,13 @@ public class WechatCrawler {
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
             if (code >= 200 && code < 300) {
-                writeLog("[UPLOAD] [落雪] 上传" + diffMap.get(diff) + "成功 状态: " + code);
+                writeLog("[UPLOAD] [落雪] 上传" + getDiffLabel(diff) + "成功 状态: " + code);
             } else {
                 String body = response.body() != null ? response.body().string() : "";
-                writeLog("[ERROR] [落雪] 上传" + diffMap.get(diff) + "失败: {" + code + " " + body + "}");
+                writeLog("[ERROR] [落雪] 上传" + getDiffLabel(diff) + "失败: {" + code + " " + body + "}");
             }
         } catch (Exception e) {
-            writeLog("[ERROR] [落雪] 上传" + diffMap.get(diff) + "失败: {异常 " + e.getMessage() + "}");
+            writeLog("[ERROR] [落雪] 上传" + getDiffLabel(diff) + "失败: {异常 " + e.getMessage() + "}");
         }
     }
 
@@ -178,10 +179,17 @@ public class WechatCrawler {
 
         if (password != null && !password.isEmpty()) {
             writeLog("[SYSTEM] 开始上传至落雪服务器");
+            
+            // 优先上传用户信息页 (-1) 以确立玩家档案，防止成绩 404
+            if (htmlCache.containsKey(-1)) {
+                uploadToLxns(-1, htmlCache.get(-1), password);
+                sleep(1000);
+            }
+
             for (Map.Entry<Integer, String> entry : htmlCache.entrySet()) {
                 if (CrawlerCaller.isStopped) return;
-                // 落雪需要用户信息页（-1），跳过最近游玩(-2)即可
-                if (entry.getKey() == -2) continue;
+                // 跳过用户信息页 (已传) 和 最近游玩页 (-2)
+                if (entry.getKey() < 0) continue;
                 sleep(1000); // 防止触发落雪限流
                 uploadToLxns(entry.getKey(), entry.getValue(), password);
             }

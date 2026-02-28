@@ -41,6 +41,7 @@ class TransferProvider extends ChangeNotifier {
   bool _pendingWechat = false; // 等 VPN 真正启动后再跳微信
   int? _trackingGameType;
   int _oauthTargetGameType = 0; // 记录本次 OAuth 的目标游戏类型
+  int _lastMode = 0; // 记录最近一次启动模式，供权限回调恢复使用
   Set<int> _currentDifficulties = {0, 1, 2, 3, 4, 5};
   String? _errorMessage;
   String? _successMessage;
@@ -63,7 +64,6 @@ class TransferProvider extends ChangeNotifier {
   String getVpnLog(int gameType) => _gameLogs[gameType] ?? "";
   bool get isLxnsOAuthDone => _isLxnsOAuthDoneMap[_activeGameType] ?? false;
 
-  // New Per-Game Getters
   bool isDivingFishVerifiedFor(int gameType) =>
       _isDivingFishVerifiedMap[gameType] ?? false;
   bool isLxnsVerifiedFor(int gameType) => _isLxnsVerifiedMap[gameType] ?? false;
@@ -116,10 +116,9 @@ class TransferProvider extends ChangeNotifier {
       utf8.encode("tenant=lxns&nonce=${_generateRandomString(8)}"),
     );
 
-    // 根据游戏类型动态切换 OAuth Scope
-    final String scope = gameType == 0
-        ? "read_user_profile+read_player+write_player+read_user_token"
-        : "read_user_profile+read_chunithm_player+write_chunithm_player+read_user_token";
+    // 统一 OAuth Scope：LXNS 采用通用权限标识，涵盖所有关联游戏
+    const String scope =
+        "read_user_profile+read_player+write_player+read_user_token";
 
     const int oauthPort = 34125;
     final String redirectUri = "http://127.0.0.1:$oauthPort/oauth/callback";
@@ -292,20 +291,26 @@ class TransferProvider extends ChangeNotifier {
           break;
         case 'onVpnPrepared':
           if (call.arguments == true) {
-            startVpn();
+            await startVpn(mode: _lastMode);
           }
           break;
       }
     });
   }
 
-  Future<void> startVpn() async {
+  Future<void> startVpn({required int mode}) async {
     final ok = await _channel.invokeMethod<bool>('prepareVpn');
     if (ok == true) {
+      // 根据 mode 决定下发的 Token
+      final finalDfToken = (mode == 0 || mode == 1) ? dfToken : "";
+      final finalLxnsToken = (mode == 2 || mode == 1)
+          ? (_lxnsTokens[_trackingGameType ?? 0] ?? "")
+          : "";
+
       // 将 Token 凭证与难度配置一同下发，供原生 DataContext 存储后使用
       await _channel.invokeMethod('startVpn', {
-        'username': dfToken,
-        'password': lxnsToken,
+        'username': finalDfToken,
+        'password': finalLxnsToken,
         'gameType': _trackingGameType,
         'isLxnsOAuth':
             _isLxnsOAuthDoneMap[_trackingGameType ?? 0] ?? false, // 设置鉴权模式标识
@@ -372,10 +377,12 @@ class TransferProvider extends ChangeNotifier {
 
   Future<void> startImport({
     required int gameType,
+    required int mode,
     Set<int> difficulties = const {0, 1, 2, 3, 4, 5},
   }) async {
     _isTracking = true;
     _trackingGameType = gameType;
+    _lastMode = mode;
     _currentDifficulties = difficulties;
     _gameLogs[gameType] = "";
     notifyListeners();
@@ -385,7 +392,7 @@ class TransferProvider extends ChangeNotifier {
 
     try {
       _pendingWechat = true;
-      await startVpn();
+      await startVpn(mode: mode);
       // 到这里有两种情况：
       // 1. 已有 VPN 权限 → startVpn 内部已调用 _afterVpnReady，_pendingWechat=false
       // 2. 首次需要授权 → 系统弹窗未关闭，_pendingWechat 保持 true；
@@ -472,17 +479,16 @@ class TransferProvider extends ChangeNotifier {
     final targetGt = gameType ?? _activeGameType;
     if (df != null) {
       dfToken = df;
-      // 只要 dfToken 变了，全游戏的验证都要重置（因为 dfToken 目前全局一份，但逻辑上建议全游戏失效）
+      // 水鱼 Token 全局同步，但需要重置所有游戏的验证状态
       for (final gt in [0, 1]) {
         _isDivingFishVerifiedMap[gt] = false;
       }
     }
     if (lxns != null) {
       _lxnsTokens[targetGt] = lxns;
-      if (targetGt == _activeGameType) {
-        lxnsToken = lxns;
-      }
       _isLxnsVerifiedMap[targetGt] = false;
+      // 不要设置 OAuthDone 位，因为手动输入的可能是个人 API Key
+      _isLxnsOAuthDoneMap[targetGt] = false;
     }
     notifyListeners();
   }
@@ -503,7 +509,8 @@ class TransferProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
-    if (needsLxns && lxnsToken.isEmpty) {
+    final currentLxnsToken = _lxnsTokens[gameType] ?? "";
+    if (needsLxns && currentLxnsToken.isEmpty) {
       _errorMessage = UiStrings.inputLxnsToken;
       _isLoading = false;
       notifyListeners();
@@ -526,7 +533,7 @@ class TransferProvider extends ChangeNotifier {
       }
       if (needsLxns && !lxnsSuccess) {
         lxnsSuccess = await _apiService.validateLxnsToken(
-          lxnsToken,
+          currentLxnsToken,
           gameType: gameType,
           isOAuth: _isLxnsOAuthDoneMap[gameType] ?? false,
         );
@@ -545,8 +552,8 @@ class TransferProvider extends ChangeNotifier {
         await _storageService.save(StorageService.kDivingFishToken, dfToken);
       }
       if (lxnsSuccess) {
-        _lxnsTokens[gameType] = lxnsToken;
-        await _storageService.save('lxns_token_$gameType', lxnsToken);
+        _lxnsTokens[gameType] = currentLxnsToken;
+        await _storageService.save('lxns_token_$gameType', currentLxnsToken);
       }
 
       _successMessage = UiStrings.verifySuccess;

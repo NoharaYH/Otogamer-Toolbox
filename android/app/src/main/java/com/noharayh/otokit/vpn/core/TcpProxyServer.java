@@ -125,13 +125,7 @@ public class TcpProxyServer implements Runnable {
                 remoteTunnel.setBrotherTunnel(localTunnel);
                 localTunnel.setBrotherTunnel(remoteTunnel);
 
-                if (destAddress.getPort() == 80 && destAddress.getHostName().endsWith("wahlap.com")) {
-                    destAddress = new InetSocketAddress("192.168.1.3", 3000);
-                    remoteTunnel.connect(destAddress);
-                }
-                else {
-                    remoteTunnel.connect(destAddress);
-                }
+                remoteTunnel.connect(destAddress);
 
             } else {
 //                 LocalVpnService.Instance.writeLog("Error: socket(%s:%d) target host is null.",

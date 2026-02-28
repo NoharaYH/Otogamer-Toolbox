@@ -370,9 +370,7 @@ public class LocalVpnService extends VpnService implements Runnable {
 //            }
 //        }
 
-//        builder.addDisallowedApplication("com.wechat.mm");
-//        builder.addAllowedApplication("com.tencent.mm");
-//        builder.addAllowedApplication("com.noharayh.otokit");
+//        builder.addDisallowedApplication(getPackageName());
 
         Intent intent = new Intent(this, com.noharayh.otokit.MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
