@@ -65,12 +65,20 @@ public class WechatCrawler {
         diffMap.put(-1, "用户信息");
         diffMap.put(-2, "最近游玩");
         diffMap.put(0, "Basic");
-        diffMap.put(1, "Advance");
+        diffMap.put(1, "Advanced");
         diffMap.put(2, "Expert");
         diffMap.put(3, "Master");
         diffMap.put(4, "Re:Master");
-        diffMap.put(5, "Utage/WE");
+        diffMap.put(5, "Utage"); // 舞萌宴谱标识，中二 WE 通过 getDiffLabel() 动态覆盖
         buildHttpClient(false);
+    }
+
+    /** 根据当前游戏类型与难度索引，返回本地化标签（支持舞萌/中二区分） */
+    private static String getDiffLabel(int diff) {
+        if (diff == 5 && com.noharayh.otokit.DataContext.GameType == 1) {
+            return "World's End";
+        }
+        return diffMap.getOrDefault(diff, "难度" + diff);
     }
 
     private static void uploadToDivingFish(Integer diff, String htmlData, String token) {
@@ -136,13 +144,11 @@ public class WechatCrawler {
 
         writeLog("[SYSTEM] 开始获取用户成绩");
 
-        // 舞萌 DX 额外抓取项：用户信息与最近游玩
-        if (com.noharayh.otokit.DataContext.GameType == 0) {
-            fetchSingleHtmlToCache(-1); // 用户资料页（落雪规范要求上传）
-            sleep(1000);
-            fetchSingleHtmlToCache(-2); // 最近游玩页
-            sleep(1000);
-        }
+        // 额外抓取项：用户信息与最近游玩（两款游戏都需要）
+        fetchSingleHtmlToCache(-1); // 用户资料页（落雪规范要求上传）
+        sleep(1000);
+        fetchSingleHtmlToCache(-2); // 最近游玩页
+        sleep(1000);
 
         for (Integer diff : difficulties) {
             if (CrawlerCaller.isStopped) {
@@ -165,7 +171,7 @@ public class WechatCrawler {
             writeLog("[SYSTEM] 开始上传至水鱼服务器");
             for (Map.Entry<Integer, String> entry : htmlCache.entrySet()) {
                 if (CrawlerCaller.isStopped) return;
-                if (entry.getKey() < 0) continue; // 跳过内部页（用户信息/最近游玩）
+                if (entry.getKey() < 0) continue; // 水鱼不接受内部页，跳过
                 uploadToDivingFish(entry.getKey(), entry.getValue(), username);
             }
         }
@@ -174,7 +180,8 @@ public class WechatCrawler {
             writeLog("[SYSTEM] 开始上传至落雪服务器");
             for (Map.Entry<Integer, String> entry : htmlCache.entrySet()) {
                 if (CrawlerCaller.isStopped) return;
-                if (entry.getKey() < 0) continue; // 跳过用户信息/最近游玩内部页
+                // 落雪需要用户信息页（-1），跳过最近游玩(-2)即可
+                if (entry.getKey() == -2) continue;
                 sleep(1000); // 防止触发落雪限流
                 uploadToLxns(entry.getKey(), entry.getValue(), password);
             }
@@ -183,39 +190,39 @@ public class WechatCrawler {
 
     private static void fetchSingleHtmlToCache(Integer diff) {
         if (CrawlerCaller.isStopped) return;
-        
+
         String baseUrl = (com.noharayh.otokit.DataContext.GameType == 0)
                 ? "https://maimai.wahlap.com/maimai-mobile/"
                 : "https://chunithm.wahlap.com/mobile/";
 
         String url;
         if (com.noharayh.otokit.DataContext.GameType == 0) {
-            // 舞萌 DX
-            if (diff == -1) url = baseUrl + "friend/userFriendCode/"; // 落雪文档要求页，兼含 friendCode
-            else if (diff == -2) url = baseUrl + "record/";
-            else if (diff == 5) url = baseUrl + "record/musicGenre/search/?genre=99&diff=10";
+            // 舞萌 DX 抓取路径
+            if (diff == -1) url = baseUrl + "friend/userFriendCode/"; // 落雪规范页：含 friendCode
+            else if (diff == -2) url = baseUrl + "record/";           // 最近游玩
+            else if (diff == 5) url = baseUrl + "record/musicGenre/search/?genre=99&diff=10"; // 宴谱 Utage
             else url = baseUrl + "record/musicSort/search/?search=V&sort=1&playCheck=on&diff=" + diff;
-
         } else {
-            // Chunithm 路径
-            if (diff == -1) url = baseUrl + "playerData/";
-            else if (diff == -2) url = baseUrl + "record/";
-            else if (diff == 5) url = baseUrl + "record/worldsEndList";
-            else url = baseUrl + "record/musicGenre"; // 中二难度页逻辑复杂，先保留基础路径
+            // 中二节奏 抓取路径
+            if (diff == -1) url = baseUrl + "home/playerData";       // 落雪规范页：含玩家信息
+            else if (diff == -2) url = baseUrl + "record/playlog";   // 最近游玩
+            else if (diff == 5) url = baseUrl + "record/worldsEndList"; // World's End
+            else url = baseUrl + "record/musicGenre?difficulty=" + diff; // BASIC~ULTIMA 按难度
         }
 
+        String label = getDiffLabel(diff);
         Request request = new Request.Builder().url(url).build();
         try (Response response = client.newCall(request).execute()) {
             String html = Objects.requireNonNull(response.body()).string();
             if (html.length() < 1000) {
-                writeLog("[WARN] " + diffMap.get(diff) + " 页面响应过短，可能抓取异常");
+                writeLog("[WARN] " + label + " 页面响应过短，可能抓取异常");
             }
             htmlCache.put(diff, html);
             if (diff >= 0) { // 不向前端暴露内部抓取页的日志
-                writeLog("[DOWNLOAD] 已获取 " + diffMap.get(diff) + " 数据");
+                writeLog("[DOWNLOAD] 已获取 " + label + " 数据");
             }
         } catch (Exception e) {
-            writeLog("[ERROR] 获取 " + diffMap.get(diff) + " 失败: {异常 " + e.getMessage() + "}");
+            writeLog("[ERROR] 获取 " + label + " 失败: {异常 " + e.getMessage() + "}");
         }
     }
 

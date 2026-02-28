@@ -21,6 +21,7 @@ class SyncLogPanel extends StatefulWidget {
   final VoidCallback onConfirmPause;
   final VoidCallback onConfirmResume;
   final bool isTracking;
+  final double estimatedUsedHeight;
 
   const SyncLogPanel({
     super.key,
@@ -29,6 +30,7 @@ class SyncLogPanel extends StatefulWidget {
     required this.onClose,
     required this.onConfirmPause,
     required this.onConfirmResume,
+    required this.estimatedUsedHeight,
     this.isTracking = false,
   });
 
@@ -224,40 +226,42 @@ class _SyncLogPanelState extends State<SyncLogPanel>
 
   @override
   Widget build(BuildContext context) {
-    // 胶囊态高度 = 工具栏高 + 上边距
-    // 展开态高度 = 计算目标高度
-    final double targetHeight = _isExpanded
-        ? UiSizes.getLogPanelMaxHeight(context, 464.0) // 临时硬编码预估高度，后续可进一步优化
-        : _toolbarHeight;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 展开态高度 = 填充整个父级提供的空间
+        // 胶囊态高度 = 工具栏高
+        final double targetHeight = _isExpanded
+            ? constraints.maxHeight
+            : _toolbarHeight;
 
-    final double totalHeight = targetHeight;
+        // 圆角规格与导入按钮统一
+        final double radius = UiSizes.buttonRadius;
 
-    // 圆角规格与导入按钮统一 (v2.3)
-    final double radius = UiSizes.buttonRadius;
-
-    return AnimatedContainer(
-      duration: KitAnimationEngine.expandDuration,
-      curve: KitAnimationEngine.decelerateCurve,
-      width: double.infinity,
-      height: totalHeight,
-      margin: const EdgeInsets.only(top: UiSizes.spaceS),
-      clipBehavior: Clip.antiAlias,
-      decoration: const BoxDecoration(color: UiColors.transparent),
-      child: Column(
-        children: [
-          AnimatedContainer(
-            duration: KitAnimationEngine.expandDuration,
-            curve: KitAnimationEngine.decelerateCurve,
-            height: targetHeight,
-            decoration: BoxDecoration(
-              color: UiColors.grey800,
-              borderRadius: BorderRadius.circular(UiSizes.buttonRadius),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: _buildLogContent(radius),
+        return AnimatedContainer(
+          duration: KitAnimationEngine.expandDuration,
+          curve: KitAnimationEngine.decelerateCurve,
+          width: double.infinity,
+          height: targetHeight,
+          // 移除 margin，间距由父级 Column 的 Gap 处理
+          clipBehavior: Clip.antiAlias,
+          decoration: const BoxDecoration(color: UiColors.transparent),
+          child: Column(
+            children: [
+              AnimatedContainer(
+                duration: KitAnimationEngine.expandDuration,
+                curve: KitAnimationEngine.decelerateCurve,
+                height: targetHeight,
+                decoration: BoxDecoration(
+                  color: UiColors.grey800,
+                  borderRadius: BorderRadius.circular(UiSizes.buttonRadius),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: _buildLogContent(radius),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

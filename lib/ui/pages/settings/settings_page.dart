@@ -1,13 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../design_system/constants/colors.dart';
 import 'package:provider/provider.dart';
-import '../../design_system/kit_shared/confirm_button.dart';
+import '../../design_system/constants/colors.dart';
 import '../../design_system/constants/strings.dart';
 import '../../../application/shared/navigation_provider.dart';
-import '../../../kernel/services/storage_service.dart';
-import '../../../kernel/di/injection.dart';
-import '../../../application/transfer/transfer_provider.dart';
+import '../../../application/shared/game_provider.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -17,66 +14,11 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  final _dfTokenController = TextEditingController();
-  final _lxnsTokenController = TextEditingController();
-  bool _isLoading = true;
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final dfToken = await getIt<StorageService>().read(
-      StorageService.kDivingFishToken,
-    );
-    final lxnsToken = await getIt<StorageService>().read(
-      StorageService.kLxnsToken,
-    );
-
-    if (mounted) {
-      setState(() {
-        _dfTokenController.text = dfToken ?? '';
-        _lxnsTokenController.text = lxnsToken ?? '';
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _saveSettings() async {
-    setState(() => _isSaving = true);
-
-    // 增加感知延迟
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    await getIt<StorageService>().save(
-      StorageService.kDivingFishToken,
-      _dfTokenController.text,
-    );
-    await getIt<StorageService>().save(
-      StorageService.kLxnsToken,
-      _lxnsTokenController.text,
-    );
-
-    if (mounted) {
-      setState(() => _isSaving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            UiStrings.settingsSaved,
-            style: TextStyle(color: UiColors.white),
-          ),
-          backgroundColor: UiColors.success,
-        ),
-      );
-      context.read<NavigationProvider>().closeSettings();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final gameProvider = context.watch<GameProvider>();
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Material(
       color: UiColors.transparent,
       child: Stack(
@@ -92,84 +34,58 @@ class _SettingsPageState extends State<SettingsPage> {
           SafeArea(
             child: Stack(
               children: [
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ListView(
-                        padding: const EdgeInsets.only(
-                          top: 80,
-                          left: 24,
-                          right: 24,
-                          bottom: 24,
-                        ),
-                        children: [
-                          const Text(
-                            UiStrings.accountBindSettings,
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              color: UiColors.grey800,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          _buildSectionHeader(UiStrings.divingFishLabel),
-                          TextField(
-                            controller: _dfTokenController,
-                            decoration: const InputDecoration(
-                              labelText: 'Import Token',
-                              hintText: UiStrings.divingFishImportHint,
-                              border: OutlineInputBorder(),
-                              helperText: UiStrings.divingFishImportHelper,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          _buildSectionHeader(UiStrings.lxnsLabel),
-                          Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.only(bottom: 16),
-                            child: OutlinedButton.icon(
-                              icon: const Icon(Icons.link, size: 20),
-                              label: const Text(UiStrings.authLxnsOAuth),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Theme.of(context).primaryColor,
-                                side: BorderSide(
-                                  color: Theme.of(context).primaryColor,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              onPressed: () {
-                                context
-                                    .read<TransferProvider>()
-                                    .startLxnsOAuthFlow();
-                              },
-                            ),
-                          ),
-                          TextField(
-                            controller: _lxnsTokenController,
-                            decoration: const InputDecoration(
-                              labelText: UiStrings.lxnsDevTokenLabel,
-                              hintText: UiStrings.lxnsDevTokenHint,
-                              border: OutlineInputBorder(),
-                              helperText: UiStrings.lxnsDevTokenHelper,
-                            ),
-                          ),
-
-                          const SizedBox(height: 40),
-                          ConfirmButton(
-                            text: UiStrings.saveConfig,
-                            icon: Icons.save,
-                            state: _isSaving
-                                ? ConfirmButtonState.loading
-                                : ConfirmButtonState.ready,
-                            onPressed: _saveSettings,
-                          ),
-                        ],
+                ListView(
+                  padding: const EdgeInsets.only(
+                    top: 80,
+                    left: 24,
+                    right: 24,
+                    bottom: 24,
+                  ),
+                  children: [
+                    const Text(
+                      UiStrings.personalization,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: UiColors.grey800,
                       ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionHeader(UiStrings.startupPage),
+                    const SizedBox(height: 8),
+
+                    // 启动页设置项 (三选一)
+                    _buildOption(
+                      context,
+                      title: UiStrings.startupMai,
+                      isSelected:
+                          gameProvider.startupPref == StartupPagePref.mai,
+                      onTap: () =>
+                          gameProvider.setStartupPref(StartupPagePref.mai),
+                      primaryColor: primaryColor,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildOption(
+                      context,
+                      title: UiStrings.startupChu,
+                      isSelected:
+                          gameProvider.startupPref == StartupPagePref.chu,
+                      onTap: () =>
+                          gameProvider.setStartupPref(StartupPagePref.chu),
+                      primaryColor: primaryColor,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildOption(
+                      context,
+                      title: UiStrings.startupLast,
+                      isSelected:
+                          gameProvider.startupPref == StartupPagePref.last,
+                      onTap: () =>
+                          gameProvider.setStartupPref(StartupPagePref.last),
+                      primaryColor: primaryColor,
+                    ),
+                  ],
+                ),
                 // 左上角返回键
                 Positioned(
                   top: 16,
@@ -193,6 +109,52 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Widget _buildOption(
+    BuildContext context, {
+    required String title,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required Color primaryColor,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? primaryColor.withValues(alpha: 0.1)
+              : UiColors.grey100,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? primaryColor : UiColors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: isSelected ? primaryColor : UiColors.grey400,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? primaryColor : UiColors.grey700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -201,7 +163,7 @@ class _SettingsPageState extends State<SettingsPage> {
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: UiColors.grey800,
+          color: UiColors.grey600,
         ),
       ),
     );

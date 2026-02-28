@@ -48,29 +48,25 @@ class ScoreSyncCard extends StatelessWidget {
               ),
             ],
           ),
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                UiSizes.cardContentPadding,
-                UiSizes.atomicComponentGap,
-                UiSizes.cardContentPadding,
-                UiSizes.atomicComponentGap,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ScoreSyncModeTabs(
-                    mode: mode,
-                    onModeChanged: onModeChanged,
-                    isDisabled: provider.isTracking,
-                    isDfVerified: provider.isDivingFishVerified,
-                    isLxnsVerified: provider.isLxnsVerified,
-                  ),
-                  child,
-                ],
-              ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: UiSizes.cardContentPadding,
+              vertical: UiSizes.atomicComponentGap,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ScoreSyncModeTabs(
+                  mode: mode,
+                  onModeChanged: onModeChanged,
+                  isDisabled: provider.isTracking,
+                  isDfVerified: provider.isDivingFishVerified,
+                  isLxnsVerified: provider.isLxnsVerified,
+                ),
+                // 为下层业务逻辑提供扩张能力，确保内部组件能感知到卡片剩余空间
+                Expanded(child: child),
+              ],
             ),
           ),
         );

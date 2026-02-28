@@ -4,15 +4,15 @@ import '../../../design_system/visual_skins/implementations/chunithm/verse_backg
 import 'score_sync_logo_wrapper.dart';
 import 'score_sync_assembly.dart';
 
-class ChuSyncPage extends StatefulWidget {
-  const ChuSyncPage({super.key});
+class ChuSyncPage extends StatelessWidget {
+  final int mode;
+  final ValueChanged<int> onModeChanged;
 
-  @override
-  State<ChuSyncPage> createState() => _ChuSyncPageState();
-}
-
-class _ChuSyncPageState extends State<ChuSyncPage> {
-  int _transferMode = 0;
+  const ChuSyncPage({
+    super.key,
+    required this.mode,
+    required this.onModeChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,8 +24,8 @@ class _ChuSyncPageState extends State<ChuSyncPage> {
         data: Theme.of(context).copyWith(extensions: [const ChunithmSkin()]),
         child: ScoreSyncAssembly(
           key: const ValueKey('ScoreSyncAssembly_Chu'),
-          mode: _transferMode,
-          onModeChanged: (val) => setState(() => _transferMode = val),
+          mode: mode,
+          onModeChanged: onModeChanged,
           gameType: 1,
         ),
       ),

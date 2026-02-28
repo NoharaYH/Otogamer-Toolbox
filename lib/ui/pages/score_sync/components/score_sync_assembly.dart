@@ -14,6 +14,7 @@ import '../../../design_system/kit_score_sync/sync_log_panel.dart';
 import '../../../design_system/kit_score_sync/content_animator.dart';
 import '../../../design_system/kit_shared/confirm_button.dart';
 import '../../../design_system/kit_score_sync/mai_dif_choice.dart';
+import '../../../design_system/kit_score_sync/chu_dif_choice.dart';
 
 import '../../../../application/transfer/transfer_provider.dart';
 import '../../../../application/shared/toast_provider.dart';
@@ -83,7 +84,7 @@ class _ScoreSyncAssemblyState extends State<ScoreSyncAssembly> {
           child: Column(
             children: [
               // 内容动画器切换
-              TransferContentAnimator(child: content),
+              Expanded(child: TransferContentAnimator(child: content)),
             ],
           ),
         );
@@ -119,7 +120,7 @@ class _ScoreSyncAssemblyState extends State<ScoreSyncAssembly> {
         lxnsController.text = text;
         provider.resetVerification(lxns: true);
       },
-      onLxnsOAuth: provider.startLxnsOAuthFlow,
+      onLxnsOAuth: () => provider.startLxnsOAuthFlow(gameType: widget.gameType),
     );
   }
 
@@ -174,14 +175,13 @@ class _ScoreSyncAssemblyState extends State<ScoreSyncAssembly> {
             ),
           ],
         ),
-        if (widget.gameType == 0)
-          Container(
-            height: 1,
-            color: UiColors.grey500.withValues(alpha: 0.3),
-            margin: const EdgeInsets.symmetric(
-              vertical: UiSizes.atomicComponentGap,
-            ),
+        Container(
+          height: 1,
+          color: UiColors.grey500.withValues(alpha: 0.3),
+          margin: const EdgeInsets.symmetric(
+            vertical: UiSizes.atomicComponentGap,
           ),
+        ),
         if (widget.gameType == 0)
           MaiDifChoice(
             isLoading: isCurrentTracking,
@@ -204,20 +204,25 @@ class _ScoreSyncAssemblyState extends State<ScoreSyncAssembly> {
               );
             },
           ),
-
-        // 日志面板常驻在难度选择页，随本页生命周期挂载/销毁
-        SyncLogPanel(
-          key: ValueKey('Log_${widget.gameType}'),
-          logs: provider.getVpnLog(widget.gameType),
-          isTracking: isCurrentTracking,
-          onCopy: () {
-            final currentLogs = provider.getVpnLog(widget.gameType);
-            Clipboard.setData(ClipboardData(text: currentLogs));
-            provider.appendLog('[COPY]已将控制台内容复制到剪切板');
-          },
-          onClose: () => provider.stopVpn(isManually: true),
-          onConfirmPause: () => provider.appendLog('[PAUSE]传分业务已暂停'),
-          onConfirmResume: () => provider.appendLog('[RESUME]传分业务继续'),
+        const SizedBox(height: UiSizes.spaceS),
+        // 日志面板常驻在难度选择页，随本页生命周期挂载/销毁，填满剩余空间
+        Expanded(
+          child: SyncLogPanel(
+            key: ValueKey('Log_${widget.gameType}'),
+            logs: provider.getVpnLog(widget.gameType),
+            isTracking: isCurrentTracking,
+            estimatedUsedHeight: widget.gameType == 0
+                ? UiSizes.scoreSyncUsedHeightMai
+                : UiSizes.scoreSyncUsedHeightLxns,
+            onCopy: () {
+              final currentLogs = provider.getVpnLog(widget.gameType);
+              Clipboard.setData(ClipboardData(text: currentLogs));
+              provider.appendLog('[COPY]已将控制台内容复制到剪切板');
+            },
+            onClose: () => provider.stopVpn(isManually: true),
+            onConfirmPause: () => provider.appendLog('[PAUSE]传分业务已暂停'),
+            onConfirmResume: () => provider.appendLog('[RESUME]传分业务继续'),
+          ),
         ),
       ],
     );

@@ -111,6 +111,9 @@ flutter:
     - family: JiangCheng
       fonts:
         - asset: assets/font/江城圆体 500W.ttf
+    - family: MorisawaUD
+      fonts:
+        - asset: "assets/font/森澤UD新黑 標準繁體 DB.TTF"
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

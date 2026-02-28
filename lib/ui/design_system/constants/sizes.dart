@@ -31,6 +31,10 @@ class UiSizes {
   static const double minLogPanelHeight = 100.0;
   static const double fallbackLogPanelHeight = 180.0;
 
+  // --- Score Sync Layout (Used Height excluding Log Panel) ---
+  static const double scoreSyncUsedHeightMai = 405.0;
+  static const double scoreSyncUsedHeightLxns = 464.0;
+
   // --- Layout Calculations ---
   static double getHorizontalMargin(BuildContext context) => screenEdgeMargin;
 
@@ -49,8 +53,7 @@ class UiSizes {
   }
 
   static double getCardBottomMargin(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    return (screenHeight * shellMarginSideMultiplier) + spaceS;
+    return spaceS * 2;
   }
 
   static double getLogPanelMaxHeight(

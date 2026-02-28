@@ -21,47 +21,44 @@ class ScoreSyncLogoWrapper extends StatelessWidget {
     final topMargin = UiSizes.getTopMarginWithSafeArea(context);
     return Padding(
       padding: UiSizes.getPageContentPadding(context).copyWith(top: topMargin),
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: Column(
-          children: [
-            // Logo Area with Watermark
-            SizedBox(
-              height: UiSizes.logoAreaHeight,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Watermark Text (Behind)
-                  Positioned(
-                    top: UiSizes.spaceXL,
-                    child: Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontFamily: 'GameFont',
-                        fontSize: 34,
-                        fontWeight: FontWeight.normal,
-                        color: themeColor.withValues(alpha: 0.2),
-                        letterSpacing: -1.0,
-                      ),
+      child: Column(
+        children: [
+          // Logo Area with Watermark
+          SizedBox(
+            height: UiSizes.logoAreaHeight,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Watermark Text (Behind)
+                Positioned(
+                  top: UiSizes.spaceXL,
+                  child: Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontFamily: 'GameFont',
+                      fontSize: 34,
+                      fontWeight: FontWeight.normal,
+                      color: themeColor.withValues(alpha: 0.2),
+                      letterSpacing: -1.0,
                     ),
                   ),
-                  // Logo Image (In Front)
-                  Align(
-                    alignment: Alignment.center,
-                    child: Image.asset(
-                      logoPath,
-                      height: UiSizes.logoHeight,
-                      fit: BoxFit.contain,
-                    ),
+                ),
+                // Logo Image (In Front)
+                Align(
+                  alignment: Alignment.center,
+                  child: Image.asset(
+                    logoPath,
+                    height: UiSizes.logoHeight,
+                    fit: BoxFit.contain,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
 
-            const SizedBox(height: UiSizes.atomicComponentGap),
-            child,
-          ],
-        ),
+          const SizedBox(height: UiSizes.atomicComponentGap),
+          Flexible(fit: FlexFit.loose, child: child),
+        ],
       ),
     );
   }

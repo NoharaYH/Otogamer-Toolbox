@@ -118,9 +118,13 @@ class UiStrings {
   static const String lxnsDevTokenLabel = '落雪 API 密钥';
   static const String lxnsDevTokenHint = '授权后可自动获取或手动填入';
   static const String lxnsDevTokenHelper = '此密钥将用于上传 XML/HTML 成绩数据';
-  static const String authLxnsVerify = "验证并完成";
+  static const String authLxnsVerify = "落雪授权已完成";
   static const String saveConfig = '保存配置';
-  static const String authLxnsOAuth = "请使用落雪 OAuth 进行授权";
+  static const String authLxnsOAuth = "验证落雪OAuth授权";
+
+  // --- Difficulty Labels (for log) ---
+  static const String diffLabelUtage = "U·TA·GE";
+  static const String diffLabelWorldsEnd = "World's END";
 
   // --- OAuth & PKCE ---
   static const String errOAuthNoLaunch = "无法打开授权页面";
@@ -134,4 +138,11 @@ class UiStrings {
   static const String syncPending = "传分业务挂起";
   static const String startProxyService = "正在启动本地代理环境...";
   static const String errInitFailed = "初始化失败: ";
+
+  // --- Settings (Personalization) ---
+  static const String personalization = "个性化";
+  static const String startupPage = "启动应用时显示的页面";
+  static const String startupLast = "以上次退出时的页面为准";
+  static const String startupMai = "舞萌 DX (Maimai)";
+  static const String startupChu = "中二节奏 (Chunithm)";
 }
