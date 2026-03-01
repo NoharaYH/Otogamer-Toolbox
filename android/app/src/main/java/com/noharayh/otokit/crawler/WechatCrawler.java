@@ -76,8 +76,11 @@ public class WechatCrawler {
     /** 根据当前游戏类型与难度索引，返回本地化标签（支持舞萌/中二区分） */
     private static String getDiffLabel(int diff) {
         if (com.noharayh.otokit.DataContext.GameType == 1) {
-            if (diff == 4) return "ULTIMA";
-            if (diff == 5 || diff == 10) return "U·TA·GE"; // 语义统一
+            String label;
+            if (diff == 4) label = "ULTIMA";
+            else if (diff == 5 || diff == 10) label = "U·TA·GE"; // 语义统一
+            else label = diffMap.getOrDefault(diff, "难度" + diff);
+            return label.toUpperCase(); // 中二难度文字全部改为大写
         }
         return diffMap.getOrDefault(diff, "难度" + diff);
     }
@@ -118,14 +121,15 @@ public class WechatCrawler {
 
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
+            boolean isSilent = diff < 0; // 用户信息(-1)和最近游玩(-2)静默
             if (code >= 200 && code < 300) {
-                writeLog("[UPLOAD] [水鱼] 上传" + getDiffLabel(diff) + "成功 状态: " + code);
+                if (!isSilent) writeLog("[UPLOAD] [水鱼] 上传" + getDiffLabel(diff) + "成功");
             } else {
                 String body = response.body() != null ? response.body().string() : "";
-                writeLog("[ERROR] [水鱼] 上传" + getDiffLabel(diff) + "失败: {" + code + " " + body + "}");
+                writeLog("[ERROR] [水鱼] 上传" + getDiffLabel(diff) + "失败: " + code + " - " + body);
             }
         } catch (Exception e) {
-            writeLog("[ERROR] [水鱼] 上传" + getDiffLabel(diff) + "失败: {异常 " + e.getMessage() + "}");
+            writeLog("[ERROR] [水鱼] 上传" + getDiffLabel(diff) + "失败: 异常 - " + e.getMessage());
         }
     }
 
@@ -142,14 +146,15 @@ public class WechatCrawler {
 
         try (Response response = client.newCall(request).execute()) {
             int code = response.code();
+            boolean isSilent = diff < 0; // 用户信息(-1)和最近游玩(-2)静默
             if (code >= 200 && code < 300) {
-                writeLog("[UPLOAD] [落雪] 上传" + getDiffLabel(diff) + "成功 状态: " + code);
+                if (!isSilent) writeLog("[UPLOAD] [落雪] 上传" + getDiffLabel(diff) + "成功");
             } else {
                 String body = response.body() != null ? response.body().string() : "";
-                writeLog("[ERROR] [落雪] 上传" + getDiffLabel(diff) + "失败: {" + code + " " + body + "}");
+                writeLog("[ERROR] [落雪] 上传" + getDiffLabel(diff) + "失败: " + code + " - " + body);
             }
         } catch (Exception e) {
-            writeLog("[ERROR] [落雪] 上传" + getDiffLabel(diff) + "失败: {异常 " + e.getMessage() + "}");
+            writeLog("[ERROR] [落雪] 上传" + getDiffLabel(diff) + "失败: 异常 - " + e.getMessage());
         }
     }
 
@@ -174,7 +179,7 @@ public class WechatCrawler {
         }
 
         if (htmlCache.isEmpty()) {
-            writeLog("[ERROR] 获取成绩失败: {异常 未获取到有效 HTML 数据，取消上传}");
+            writeLog("[ERROR] 获取成绩失败: 异常 - 未获取到有效 HTML 数据，取消上传");
             return;
         }
 
@@ -221,9 +226,10 @@ public class WechatCrawler {
         try (Response response = client.newCall(request).execute()) {
             String html = Objects.requireNonNull(response.body()).string();
             htmlCache.put(diff, html);
-            writeLog("[DOWNLOAD] 已获取 " + label + " 数据");
+            boolean isSilent = diff < 0; // 用户信息(-1)和最近游玩(-2)静默
+            if (!isSilent) writeLog("[DOWNLOAD] 已获取" + label + "数据");
         } catch (Exception e) {
-            writeLog("[ERROR] 获取 " + label + " 失败: {异常 " + e.getMessage() + "}");
+            writeLog("[ERROR] 获取" + label + "失败: 异常 - " + e.getMessage());
         }
     }
 
