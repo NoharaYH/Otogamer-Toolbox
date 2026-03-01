@@ -8,8 +8,7 @@ import 'score_sync/score_sync_page.dart';
 import 'settings/settings_page.dart';
 import '../design_system/kit_navigation/nav_deck_overlay.dart';
 import '../design_system/constants/sizes.dart';
-import '../design_system/visual_skins/implementations/maimai_dx/circle_background.dart';
-import '../design_system/visual_skins/implementations/chunithm/verse_background.dart';
+import '../design_system/visual_skins/implementations/defaut_skin/star_background.dart';
 import '../design_system/kit_shared/kit_action_circle.dart';
 import '../design_system/page_shell.dart';
 
@@ -22,30 +21,7 @@ class RootPage extends StatelessWidget {
       backgroundOverride: AnimatedBuilder(
         animation: context.read<GameProvider>().pageValueNotifier,
         builder: (context, _) {
-          final double page = context
-              .read<GameProvider>()
-              .pageValueNotifier
-              .value;
-          final int index = page.floor();
-          final double t = (page - index).clamp(0.0, 1.0);
-          const skins = [MaimaiSkin(), ChunithmSkin()];
-
-          final int currentIdx = index.clamp(0, skins.length - 1);
-          final int nextIdx = (index + 1).clamp(0, skins.length - 1);
-
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              skins[currentIdx].buildBackground(context),
-              if (currentIdx != nextIdx)
-                IgnorePointer(
-                  child: Opacity(
-                    opacity: t,
-                    child: skins[nextIdx].buildBackground(context),
-                  ),
-                ),
-            ],
-          );
+          return const StarBackgroundSkin().buildBackground(context);
         },
       ),
       child: Stack(
@@ -109,19 +85,8 @@ class RootPage extends StatelessWidget {
           AnimatedBuilder(
             animation: context.read<GameProvider>().pageValueNotifier,
             builder: (context, _) {
-              final double page = context
-                  .read<GameProvider>()
-                  .pageValueNotifier
-                  .value;
-              final int index = page.floor();
-              final double t = (page - index).clamp(0.0, 1.0);
-
-              const skins = [MaimaiSkin(), ChunithmSkin()];
-              final currentSkin = skins[index.clamp(0, skins.length - 1)];
-              final nextSkin = skins[(index + 1).clamp(0, skins.length - 1)];
-              final lerpedSkin = currentSkin.lerp(nextSkin, t);
-
-              final themeColor = lerpedSkin.medium;
+              const skin = StarBackgroundSkin();
+              final themeColor = skin.medium;
 
               return Positioned(
                 // 按钮回归玻璃层内部腹地。
@@ -178,20 +143,10 @@ class RootPage extends StatelessWidget {
           AnimatedBuilder(
             animation: context.read<GameProvider>().pageValueNotifier,
             builder: (context, _) {
-              final double page = context
-                  .read<GameProvider>()
-                  .pageValueNotifier
-                  .value;
-              final int index = page.floor();
-              final double t = (page - index).clamp(0.0, 1.0);
-              const skins = [MaimaiSkin(), ChunithmSkin()];
-              final lerpedSkin = skins[index.clamp(0, skins.length - 1)].lerp(
-                skins[(index + 1).clamp(0, skins.length - 1)],
-                t,
-              );
+              const skin = StarBackgroundSkin();
 
               return Theme(
-                data: Theme.of(context).copyWith(extensions: [lerpedSkin]),
+                data: Theme.of(context).copyWith(extensions: [skin]),
                 child: const Positioned.fill(child: NavDeckOverlay()),
               );
             },

@@ -10,8 +10,7 @@ import 'components/mai_sync_page.dart';
 import 'components/chu_sync_page.dart';
 
 // Skins
-import '../../design_system/visual_skins/implementations/maimai_dx/circle_background.dart';
-import '../../design_system/visual_skins/implementations/chunithm/verse_background.dart';
+import '../../design_system/visual_skins/implementations/defaut_skin/star_background.dart';
 
 class ScoreSyncPage extends StatefulWidget {
   const ScoreSyncPage({super.key});
@@ -83,7 +82,7 @@ class _ScoreSyncPageState extends State<ScoreSyncPage>
       onPageChanged: gameProvider.onPageChanged,
       items: [
         GamePageItem(
-          skin: const MaimaiSkin(),
+          skin: const StarBackgroundSkin(),
           content: MaiSyncPage(
             mode: _transferModes[0]!,
             onModeChanged: (val) => setState(() => _transferModes[0] = val),
@@ -91,7 +90,7 @@ class _ScoreSyncPageState extends State<ScoreSyncPage>
           title: 'Maimai DX',
         ),
         GamePageItem(
-          skin: const ChunithmSkin(),
+          skin: const StarBackgroundSkin(),
           content: ChuSyncPage(
             mode: _transferModes[1]!,
             onModeChanged: (val) => setState(() => _transferModes[1] = val),

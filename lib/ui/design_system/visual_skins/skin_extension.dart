@@ -14,11 +14,23 @@ abstract class SkinExtension extends ThemeExtension<SkinExtension> {
   /// 暗色调 - 用于边框、阴影、分割线
   Color get dark;
 
+  /// 副标题颜色 - 特别用于 Logo 下方的文字
+  Color get subtitleColor;
+
+  /// 页面指示点颜色
+  Color get dotColor;
+
   /// 渲染背景 Widget
   Widget buildBackground(BuildContext context);
 
   @override
-  SkinExtension copyWith({Color? light, Color? medium, Color? dark});
+  SkinExtension copyWith({
+    Color? light,
+    Color? medium,
+    Color? dark,
+    Color? subtitleColor,
+    Color? dotColor,
+  });
 
   @override
   SkinExtension lerp(ThemeExtension<SkinExtension>? other, double t) {
@@ -27,6 +39,9 @@ abstract class SkinExtension extends ThemeExtension<SkinExtension> {
       lightColor: Color.lerp(light, other.light, t) ?? light,
       mediumColor: Color.lerp(medium, other.medium, t) ?? medium,
       darkColor: Color.lerp(dark, other.dark, t) ?? dark,
+      subtitleColor_:
+          Color.lerp(subtitleColor, other.subtitleColor, t) ?? subtitleColor,
+      dotColor_: Color.lerp(dotColor, other.dotColor, t) ?? dotColor,
       baseSkin: t < 0.5 ? this : other,
     );
   }
@@ -37,12 +52,16 @@ class ThemeSkin extends SkinExtension {
   final Color lightColor;
   final Color mediumColor;
   final Color darkColor;
+  final Color subtitleColor_;
+  final Color dotColor_;
   final SkinExtension baseSkin;
 
   const ThemeSkin({
     required this.lightColor,
     required this.mediumColor,
     required this.darkColor,
+    required this.subtitleColor_,
+    required this.dotColor_,
     required this.baseSkin,
   });
 
@@ -52,17 +71,29 @@ class ThemeSkin extends SkinExtension {
   Color get medium => mediumColor;
   @override
   Color get dark => darkColor;
+  @override
+  Color get subtitleColor => subtitleColor_;
+  @override
+  Color get dotColor => dotColor_;
 
   @override
   Widget buildBackground(BuildContext context) =>
       baseSkin.buildBackground(context);
 
   @override
-  SkinExtension copyWith({Color? light, Color? medium, Color? dark}) {
+  SkinExtension copyWith({
+    Color? light,
+    Color? medium,
+    Color? dark,
+    Color? subtitleColor,
+    Color? dotColor,
+  }) {
     return ThemeSkin(
       lightColor: light ?? lightColor,
       mediumColor: medium ?? mediumColor,
       darkColor: dark ?? darkColor,
+      subtitleColor_: subtitleColor ?? subtitleColor_,
+      dotColor_: dotColor ?? dotColor_,
       baseSkin: baseSkin,
     );
   }

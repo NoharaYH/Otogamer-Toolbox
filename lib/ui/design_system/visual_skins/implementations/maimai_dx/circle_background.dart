@@ -17,6 +17,12 @@ class MaimaiSkin extends SkinExtension {
   @override
   Color get dark => const Color.fromARGB(255, 239, 9, 109); // 深粉 - 渐变终点/边框
 
+  @override
+  Color get subtitleColor => medium;
+
+  @override
+  Color get dotColor => medium;
+
   // ==================== 背景渲染 ====================
 
   @override
@@ -101,7 +107,13 @@ class MaimaiSkin extends SkinExtension {
   // ==================== ThemeExtension 必需方法 ====================
 
   @override
-  SkinExtension copyWith({Color? light, Color? medium, Color? dark}) {
+  SkinExtension copyWith({
+    Color? light,
+    Color? medium,
+    Color? dark,
+    Color? subtitleColor,
+    Color? dotColor,
+  }) {
     return this; // 皮肤是常量，不需要复制
   }
 }

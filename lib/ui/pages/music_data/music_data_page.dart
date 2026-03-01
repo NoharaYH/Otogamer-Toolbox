@@ -11,8 +11,7 @@ import '../../design_system/kit_shared/kit_game_carousel.dart';
 import '../../design_system/kit_shared/game_page_item.dart';
 
 import '../score_sync/components/score_sync_logo_wrapper.dart';
-import '../../design_system/visual_skins/implementations/maimai_dx/circle_background.dart';
-import '../../design_system/visual_skins/implementations/chunithm/verse_background.dart';
+import '../../design_system/visual_skins/implementations/defaut_skin/star_background.dart';
 
 import 'components/mai_music_assembly.dart';
 import 'components/chu_music_assembly.dart';
@@ -72,22 +71,22 @@ class _MusicDataPageState extends State<MusicDataPage> {
       },
       items: [
         GamePageItem(
-          skin: const MaimaiSkin(),
+          skin: const StarBackgroundSkin(),
           title: 'Maimai DX',
           content: ScoreSyncLogoWrapper(
             logoPath: AppAssets.logoMaimai,
             subtitle: 'MUSIC LIBRARY',
-            themeColor: const MaimaiSkin().medium,
+            themeColor: const StarBackgroundSkin().medium,
             child: const Expanded(child: MaiMusicAssembly()),
           ),
         ),
         GamePageItem(
-          skin: const ChunithmSkin(),
+          skin: const StarBackgroundSkin(),
           title: 'Chunithm',
           content: ScoreSyncLogoWrapper(
             logoPath: AppAssets.logoChunithm,
             subtitle: 'MUSIC LIBRARY',
-            themeColor: const ChunithmSkin().medium,
+            themeColor: const StarBackgroundSkin().medium,
             child: const Expanded(child: ChuMusicAssembly()),
           ),
         ),

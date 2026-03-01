@@ -18,7 +18,7 @@ class StickyDotIndicator extends StatelessWidget {
     final skin = Theme.of(
       context,
     ).extensions.values.whereType<SkinExtension>().firstOrNull;
-    final Color activeColor = skin?.medium ?? UiColors.grey500;
+    final Color activeColor = skin?.dotColor ?? UiColors.grey500;
     final Color inactiveColor = activeColor.withValues(alpha: 0.3);
 
     const double dotSize = 8.0;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../design_system/constants/sizes.dart';
+import '../../../design_system/visual_skins/skin_extension.dart';
 
 /// A reusable wrapper for the game logo and content area on sync pages.
 class ScoreSyncLogoWrapper extends StatelessWidget {
@@ -32,15 +33,21 @@ class ScoreSyncLogoWrapper extends StatelessWidget {
                 // Watermark Text (Behind)
                 Positioned(
                   top: UiSizes.spaceXL,
-                  child: Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontFamily: 'GameFont',
-                      fontSize: 34,
-                      fontWeight: FontWeight.normal,
-                      color: themeColor.withValues(alpha: 0.2),
-                      letterSpacing: -1.0,
-                    ),
+                  child: Builder(
+                    builder: (context) {
+                      final skin = Theme.of(context).extension<SkinExtension>();
+                      final color = skin?.subtitleColor ?? themeColor;
+                      return Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontFamily: 'GameFont',
+                          fontSize: 34,
+                          fontWeight: FontWeight.normal,
+                          color: color.withValues(alpha: 0.2),
+                          letterSpacing: -1.0,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 // Logo Image (In Front)

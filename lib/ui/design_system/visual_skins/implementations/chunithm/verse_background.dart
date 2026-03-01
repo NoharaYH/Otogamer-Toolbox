@@ -17,6 +17,12 @@ class ChunithmSkin extends SkinExtension {
   @override
   Color get dark => const Color.fromARGB(255, 0, 98, 255); // 深蓝 - 边框/阴影
 
+  @override
+  Color get subtitleColor => medium;
+
+  @override
+  Color get dotColor => medium;
+
   // ==================== 背景渲染 ====================
 
   @override
@@ -70,7 +76,13 @@ class ChunithmSkin extends SkinExtension {
   // ==================== ThemeExtension 必需方法 ====================
 
   @override
-  SkinExtension copyWith({Color? light, Color? medium, Color? dark}) {
+  SkinExtension copyWith({
+    Color? light,
+    Color? medium,
+    Color? dark,
+    Color? subtitleColor,
+    Color? dotColor,
+  }) {
     return this;
   }
 }

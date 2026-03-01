@@ -72,8 +72,20 @@ class PageShell extends StatelessWidget {
           topRight: Radius.circular(28.0),
         ),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20.0, sigmaY: 20.0),
-          child: Container(color: UiColors.white.withValues(alpha: 0.8)),
+          filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: UiColors.white.withValues(alpha: 0.25),
+              border: Border.all(
+                color: UiColors.white.withValues(alpha: 0.2),
+                width: 0.5,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(28.0),
+                topRight: Radius.circular(28.0),
+              ),
+            ),
+          ),
         ),
       ),
     );
