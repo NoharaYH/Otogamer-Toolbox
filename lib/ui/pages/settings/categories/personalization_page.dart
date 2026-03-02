@@ -3,15 +3,15 @@ import 'package:provider/provider.dart';
 import '../../../../application/shared/game_provider.dart';
 import '../../../design_system/constants/sizes.dart';
 import '../../../design_system/constants/colors.dart';
-import '../../../design_system/kit_shared/kit_staggered_entrance.dart';
 import '../../../design_system/kit_shared/kit_bounce_scaler.dart';
+import '../../../design_system/visual_skins/skin_extension.dart';
+import '../../../design_system/kit_setting/setting_card.dart';
+import '../../../design_system/kit_setting/setting_menu.dart';
 
-/// 设置页: 个性化专页 (v3.0 - Logic Integration)
+/// 设置页: 个性化专页 (v4.0 - Injection Protocol)
 /// 遵循 SECONDARY_PAGE_SPEC 与 CARD_PROTOCOL。
 class PersonalizationPage extends StatelessWidget {
-  final Color themeColor;
-
-  const PersonalizationPage({super.key, this.themeColor = Colors.purpleAccent});
+  const PersonalizationPage({super.key, Color? themeColor});
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +25,11 @@ class PersonalizationPage extends StatelessWidget {
       child: Column(
         children: [
           // 卡片 A: 皮肤系统
-          _SettingsCard(
+          SettingCard(
             index: 1,
             title: "皮肤系统",
             icon: Icons.palette_outlined,
-            child: SkinSystemAssembly(themeColor: themeColor),
+            child: const SkinSystemAssembly(),
           ),
         ],
       ),
@@ -37,75 +37,16 @@ class PersonalizationPage extends StatelessWidget {
   }
 }
 
-/// 标准设置卡片包装器 (遵循 CARD_PROTOCOL)
-class _SettingsCard extends StatelessWidget {
-  final int index;
-  final String title;
-  final IconData icon;
-  final Widget child;
-
-  const _SettingsCard({
-    required this.index,
-    required this.title,
-    required this.icon,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return KitStaggeredEntrance(
-      index: index,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(UiSizes.cardContentPadding),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(UiSizes.cardRadius),
-          boxShadow: [
-            BoxShadow(
-              color: UiColors.black.withValues(alpha: 0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 20, color: UiColors.grey700),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: UiColors.grey800,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// SkinSystemAssembly: 包含复杂的皮肤切换逻辑。
+/// SkinSystemAssembly: 皮肤切换主辖件。
+/// 渲染色通过 SkinExtension.medium 注入，不接收硬传参。
 class SkinSystemAssembly extends StatelessWidget {
-  final Color themeColor;
-
-  const SkinSystemAssembly({super.key, required this.themeColor});
+  const SkinSystemAssembly({super.key});
 
   @override
   Widget build(BuildContext context) {
     final gameProvider = context.watch<GameProvider>();
+    final skin = Theme.of(context).extension<SkinExtension>()!;
+    final accentColor = skin.medium;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +63,12 @@ class SkinSystemAssembly extends StatelessWidget {
                 color: UiColors.grey700,
               ),
             ),
-            _buildIndependentSwitch(gameProvider),
+            SettingSegmentedSwitch(
+              labels: const ['全局', '独立'],
+              selectedIndex: gameProvider.isIndependentSkin ? 1 : 0,
+              onChanged: (i) => gameProvider.setIndependentSkin(i == 1),
+              accentColor: accentColor,
+            ),
           ],
         ),
 
@@ -130,18 +76,17 @@ class SkinSystemAssembly extends StatelessWidget {
         const Divider(height: 1),
         const SizedBox(height: 16),
 
-        // 2. 根据模式显示不同内容 (采用 渐隐 + 变高度 -> 浮现 策略)
+        // 2. 根据模式显示不同内容 (渐隐 + 变高度 -> 浮现策略)
         AnimatedSize(
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOutCubic,
           alignment: Alignment.topCenter,
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 600), // 总时长增加，支持两个阶段
+            duration: const Duration(milliseconds: 600),
             layoutBuilder: (currentChild, previousChildren) {
               return Stack(
                 alignment: Alignment.topCenter,
                 children: [
-                  // 旧内容以 Positioned 包裹，使其不占用空间，从而让 AnimatedSize 立即获取新内容高度并联动
                   ...previousChildren.map(
                     (e) => Positioned(top: 0, left: 0, right: 0, child: e),
                   ),
@@ -150,8 +95,6 @@ class SkinSystemAssembly extends StatelessWidget {
               );
             },
             transitionBuilder: (child, animation) {
-              // 通过 Interval 实现：前 300ms 旧的消失，后 300ms 新的出现
-              // 1.0 -> 0.5 (Outgoing) / 0.5 -> 1.0 (Incoming)
               return FadeTransition(
                 opacity: CurvedAnimation(
                   parent: animation,
@@ -164,11 +107,13 @@ class SkinSystemAssembly extends StatelessWidget {
                 ? _buildGlobalSection(
                     context,
                     gameProvider,
+                    accentColor,
                     key: const ValueKey('global_skin_config'),
                   )
                 : _buildIndependentSection(
                     context,
                     gameProvider,
+                    accentColor,
                     key: const ValueKey('independent_skin_config'),
                   ),
           ),
@@ -177,60 +122,11 @@ class SkinSystemAssembly extends StatelessWidget {
     );
   }
 
-  Widget _buildIndependentSwitch(GameProvider provider) {
-    return Container(
-      decoration: BoxDecoration(
-        color: UiColors.grey100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      padding: const EdgeInsets.all(4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildModeButton(
-            label: "全局",
-            isSelected: !provider.isIndependentSkin,
-            onTap: () => provider.setIndependentSkin(false),
-          ),
-          _buildModeButton(
-            label: "独立",
-            isSelected: provider.isIndependentSkin,
-            onTap: () => provider.setIndependentSkin(true),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModeButton({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return KitBounceScaler(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? themeColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : UiColors.grey500,
-          ),
-        ),
-      ),
-    );
-  }
-
   // --- 全局配置区 ---
   Widget _buildGlobalSection(
     BuildContext context,
-    GameProvider provider, {
+    GameProvider provider,
+    Color accentColor, {
     Key? key,
   }) {
     return Column(
@@ -239,12 +135,12 @@ class SkinSystemAssembly extends StatelessWidget {
       children: [
         _buildSubTitle("当前全局皮肤"),
         const SizedBox(height: 8),
-        _buildSkinSelector(
-          context: context,
-          options: ['default', 'maimai_dx', 'chunithm'],
-          labels: ['默认星空', '舞萌 DX', '中二节奏'],
+        SettingMenu<String>(
+          options: const ['default', 'maimai_dx', 'chunithm'],
+          labels: const ['默认星空', '舞萌 DX', '中二节奏'],
           current: provider.globalSkin,
           onSelect: provider.setGlobalSkin,
+          accentColor: accentColor,
         ),
         const SizedBox(height: 20),
         _buildSubTitle("自定义主题色"),
@@ -260,7 +156,8 @@ class SkinSystemAssembly extends StatelessWidget {
   // --- 独立配置区 ---
   Widget _buildIndependentSection(
     BuildContext context,
-    GameProvider provider, {
+    GameProvider provider,
+    Color accentColor, {
     Key? key,
   }) {
     return Column(
@@ -269,12 +166,12 @@ class SkinSystemAssembly extends StatelessWidget {
       children: [
         _buildSubTitle("舞萌 DX 独立配置"),
         const SizedBox(height: 8),
-        _buildSkinSelector(
-          context: context,
-          options: ['maimai_dx', 'default'],
-          labels: ['标准版', '星空版'],
+        SettingMenu<String>(
+          options: const ['maimai_dx', 'default'],
+          labels: const ['标准版', '星空版'],
           current: provider.maimaiSkin,
           onSelect: provider.setMaimaiSkin,
+          accentColor: accentColor,
         ),
         const SizedBox(height: 12),
         _buildColorPicker(
@@ -286,12 +183,12 @@ class SkinSystemAssembly extends StatelessWidget {
         const SizedBox(height: 16),
         _buildSubTitle("中二节奏 独立配置"),
         const SizedBox(height: 8),
-        _buildSkinSelector(
-          context: context,
-          options: ['chunithm', 'default'],
-          labels: ['标准版', '星空版'],
+        SettingMenu<String>(
+          options: const ['chunithm', 'default'],
+          labels: const ['标准版', '星空版'],
           current: provider.chunithmSkin,
           onSelect: provider.setChunithmSkin,
+          accentColor: accentColor,
         ),
         const SizedBox(height: 12),
         _buildColorPicker(
@@ -311,108 +208,6 @@ class SkinSystemAssembly extends StatelessWidget {
         color: UiColors.grey600,
         letterSpacing: 1.1,
       ),
-    );
-  }
-
-  Widget _buildSkinSelector({
-    required BuildContext context,
-    required List<String> options,
-    required List<String> labels,
-    required String current,
-    required Function(String) onSelect,
-  }) {
-    final currentLabel = labels[options.indexOf(current)];
-
-    return Builder(
-      builder: (btnCtx) {
-        return KitBounceScaler(
-          onTap: () async {
-            final result = await showMenu<String>(
-              context: context,
-              position: _getMenuPosition(btnCtx),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              color: Colors.white.withValues(alpha: 0.98),
-              items: List.generate(options.length, (i) {
-                final isSelected = current == options[i];
-                return PopupMenuItem<String>(
-                  value: options[i],
-                  child: Row(
-                    children: [
-                      Icon(
-                        isSelected
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_off,
-                        size: 18,
-                        color: isSelected ? themeColor : UiColors.grey400,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        labels[i],
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: isSelected ? themeColor : UiColors.grey700,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            );
-
-            if (result != null) {
-              onSelect(result);
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: UiColors.grey100,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.palette_outlined,
-                  size: 18,
-                  color: themeColor.withValues(alpha: 0.7),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    "皮肤样式：$currentLabel",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: UiColors.grey700,
-                    ),
-                  ),
-                ),
-                const Icon(
-                  Icons.unfold_more,
-                  size: 18,
-                  color: UiColors.grey400,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  RelativeRect _getMenuPosition(BuildContext context) {
-    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-    final Offset offset = renderBox.localToGlobal(Offset.zero);
-    return RelativeRect.fromLTRB(
-      offset.dx,
-      offset.dy + renderBox.size.height,
-      offset.dx + renderBox.size.width,
-      offset.dy + renderBox.size.height + 200,
     );
   }
 

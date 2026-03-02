@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../design_system/constants/colors.dart';
 import '../../design_system/constants/animations.dart';
-import '../../design_system/kit_shared/kit_bounce_scaler.dart';
 import '../../design_system/kit_shared/kit_staggered_entrance.dart';
 import '../../../application/shared/navigation_provider.dart';
-import 'components/settings_header.dart';
+import '../../design_system/kit_setting/setting_header.dart';
+import '../../design_system/kit_setting/setting_tile.dart';
 import 'categories/app_settings_page.dart';
 import 'categories/personalization_page.dart';
 import 'categories/sync_service_page.dart';
@@ -154,7 +154,13 @@ class _SettingsPageState extends State<SettingsPage>
                                       opacity:
                                           (1 - _expansionAnimation.value) *
                                           _fadeAnimation.value,
-                                      child: _buildMainHeader(topPadding),
+                                      child: SettingHeader(
+                                        title: '返回首页',
+                                        icon: Icons.home_outlined,
+                                        iconColor: Colors.transparent,
+                                        onBack: _handleBack,
+                                        isSubPage: false,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -165,7 +171,7 @@ class _SettingsPageState extends State<SettingsPage>
                                     child: Align(
                                       alignment: Alignment.topCenter,
                                       heightFactor: _expansionAnimation.value,
-                                      child: SettingsHeader(
+                                      child: SettingHeader(
                                         title: categories[_activeCategoryIndex!]
                                             .title,
                                         icon: categories[_activeCategoryIndex!]
@@ -241,59 +247,6 @@ class _SettingsPageState extends State<SettingsPage>
     );
   }
 
-  Widget _buildMainHeader(double topPadding) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: UiColors.black.withValues(alpha: 0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(height: topPadding),
-          GestureDetector(
-            onTap: () => _handleBack(),
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              height: 54,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              color: Colors.transparent,
-              child: Row(
-                children: [
-                  KitBounceScaler(
-                    onTap: () => _handleBack(),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 20,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    "返回首页",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMainList() {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -304,7 +257,7 @@ class _SettingsPageState extends State<SettingsPage>
             padding: const EdgeInsets.only(bottom: 12),
             child: KitStaggeredEntrance(
               index: index + 1,
-              child: _buildCategoryItem(
+              child: SettingTile(
                 icon: cat.icon,
                 title: cat.title,
                 iconColor: cat.color,
@@ -313,59 +266,6 @@ class _SettingsPageState extends State<SettingsPage>
             ),
           );
         }),
-      ),
-    );
-  }
-
-  Widget _buildCategoryItem({
-    required IconData icon,
-    required String title,
-    required Color iconColor,
-    required VoidCallback onTap,
-  }) {
-    return KitBounceScaler(
-      onTap: onTap,
-      child: Container(
-        height: 54,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: UiColors.black.withValues(alpha: 0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: iconColor,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 16),
-            Hero(
-              tag: 'category_title_$title',
-              child: Material(
-                color: Colors.transparent,
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

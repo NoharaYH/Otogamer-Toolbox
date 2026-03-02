@@ -3,8 +3,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../design_system/constants/sizes.dart';
 import '../../../design_system/constants/colors.dart';
-import '../../../design_system/kit_shared/kit_staggered_entrance.dart';
 import '../../../design_system/kit_shared/kit_bounce_scaler.dart';
+import '../../../design_system/kit_setting/setting_card.dart';
 
 /// 设置页: 应用信息专页 (v1.2 - URL Integration)
 /// 遵循 SECONDARY_PAGE_SPEC 与 CARD_PROTOCOL。
@@ -56,7 +56,7 @@ class _AboutPageState extends State<AboutPage> {
       child: Column(
         children: [
           // 1. 应用版本
-          _SettingsCard(
+          SettingCard(
             index: 1,
             title: "应用版本",
             icon: Icons.info_outline,
@@ -65,7 +65,7 @@ class _AboutPageState extends State<AboutPage> {
           const SizedBox(height: 12),
 
           // 2. 检查应用更新
-          _SettingsCard(
+          SettingCard(
             index: 2,
             title: "检查应用更新",
             icon: Icons.update_outlined,
@@ -78,7 +78,7 @@ class _AboutPageState extends State<AboutPage> {
           const SizedBox(height: 12),
 
           // 3. GitHub 仓库
-          _SettingsCard(
+          SettingCard(
             index: 3,
             title: "GitHub 仓库地址",
             icon: Icons.code_rounded,
@@ -93,7 +93,7 @@ class _AboutPageState extends State<AboutPage> {
           const SizedBox(height: 12),
 
           // 4. 建议和反馈
-          _SettingsCard(
+          SettingCard(
             index: 4,
             title: "建议和反馈",
             icon: Icons.feedback_outlined,
@@ -198,66 +198,6 @@ class _AboutPageState extends State<AboutPage> {
             style: const TextStyle(fontSize: 12, color: UiColors.grey500),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// 标准设置卡片包装器 (遵循 CARD_PROTOCOL)
-class _SettingsCard extends StatelessWidget {
-  final int index;
-  final String title;
-  final IconData icon;
-  final Widget child;
-
-  const _SettingsCard({
-    required this.index,
-    required this.title,
-    required this.icon,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return KitStaggeredEntrance(
-      index: index,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(UiSizes.cardContentPadding),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(UiSizes.cardRadius),
-          boxShadow: [
-            BoxShadow(
-              color: UiColors.black.withValues(alpha: 0.15),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 20, color: UiColors.grey700),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: UiColors.grey800,
-                    letterSpacing: 1.1,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
       ),
     );
   }
