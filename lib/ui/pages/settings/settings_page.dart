@@ -7,9 +7,12 @@ import '../../design_system/kit_shared/kit_bounce_scaler.dart';
 import '../../design_system/kit_shared/kit_staggered_entrance.dart';
 import '../../../application/shared/navigation_provider.dart';
 import 'components/settings_header.dart';
+import 'categories/app_settings_page.dart';
 import 'categories/personalization_page.dart';
 import 'categories/sync_service_page.dart';
 import '../../design_system/visual_skins/implementations/defaut_skin/star_background.dart';
+import '../../design_system/visual_skins/skin_extension.dart';
+import 'categories/about_page.dart';
 
 /// 设置模块门面容器：Overriding Layer (v4.0)
 /// 已重构：移除旧的分页逻辑，采用简洁的垂直卡片式列表。
@@ -36,25 +39,25 @@ class _SettingsPageState extends State<SettingsPage>
       icon: Icons.sync,
       title: "成绩同步设置",
       color: Colors.green,
-      page: const SyncServicePage(),
+      page: const SyncServicePage(themeColor: Colors.green),
     ),
     (
       icon: Icons.settings,
       title: "应用设置",
       color: Colors.blue,
-      page: const SizedBox(),
+      page: const AppSettingsPage(themeColor: Colors.blue),
     ),
     (
       icon: Icons.palette,
       title: "个性化设置",
       color: Colors.purpleAccent,
-      page: const PersonalizationPage(),
+      page: const PersonalizationPage(themeColor: Colors.purpleAccent),
     ),
     (
       icon: Icons.info_outline,
       color: Colors.grey,
       title: "应用信息",
-      page: const SizedBox(),
+      page: const AboutPage(themeColor: Colors.grey),
     ),
   ];
 
@@ -102,10 +105,12 @@ class _SettingsPageState extends State<SettingsPage>
         builder: (context, child) {
           final topPadding = MediaQuery.of(context).padding.top;
 
+          final skinExtension =
+              Theme.of(context).extension<SkinExtension>() ??
+              const StarBackgroundSkin();
+
           return Theme(
-            data: Theme.of(
-              context,
-            ).copyWith(extensions: [const StarBackgroundSkin()]),
+            data: Theme.of(context).copyWith(extensions: [skinExtension]),
             child: Material(
               color: Colors.transparent,
               child: Stack(
@@ -206,8 +211,19 @@ class _SettingsPageState extends State<SettingsPage>
                                       0,
                                       40 * (1 - _expansionAnimation.value),
                                     ),
-                                    child:
-                                        categories[_activeCategoryIndex!].page,
+                                    child: Theme(
+                                      data: Theme.of(context).copyWith(
+                                        extensions: [
+                                          skinExtension.copyWith(
+                                            medium:
+                                                categories[_activeCategoryIndex!]
+                                                    .color,
+                                          ),
+                                        ],
+                                      ),
+                                      child: categories[_activeCategoryIndex!]
+                                          .page,
+                                    ),
                                   ),
                                 ),
                             ],

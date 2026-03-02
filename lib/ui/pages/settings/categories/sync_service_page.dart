@@ -11,7 +11,8 @@ import '../../../design_system/kit_score_sync/score_sync_token_field.dart';
 /// 设置页: 传分服务专页 (v2.0 - Refined)
 /// 遵循 "Horizontal Paging Strategy" 与 "Internal Pushing Pattern" 规程。
 class SyncServicePage extends StatelessWidget {
-  const SyncServicePage({super.key});
+  final Color themeColor;
+  const SyncServicePage({super.key, this.themeColor = Colors.green});
 
   @override
   Widget build(BuildContext context) {

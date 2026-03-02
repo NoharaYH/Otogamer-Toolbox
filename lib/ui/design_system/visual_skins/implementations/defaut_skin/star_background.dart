@@ -41,8 +41,14 @@ class StarBackgroundSkin extends SkinExtension {
     Color? subtitleColor,
     Color? dotColor,
   }) {
-    // 皮肤是常量，lerp 会通过 ThemeSkin 处理
-    return this;
+    return ThemeSkin(
+      lightColor: light ?? this.light,
+      mediumColor: medium ?? this.medium,
+      darkColor: dark ?? this.dark,
+      subtitleColor_: subtitleColor ?? this.subtitleColor,
+      dotColor_: dotColor ?? this.dotColor,
+      baseSkin: this,
+    );
   }
 }
 

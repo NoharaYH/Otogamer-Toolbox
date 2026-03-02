@@ -14,6 +14,25 @@ class GameProvider extends ChangeNotifier {
   StartupPagePref _startupPref = StartupPagePref.mai;
   StartupPagePref get startupPref => _startupPref;
 
+  // --- 皮肤系统相关 ---
+  bool _isIndependentSkin = false;
+  bool get isIndependentSkin => _isIndependentSkin;
+
+  String _globalSkin = 'default';
+  String get globalSkin => _globalSkin;
+  Color _globalThemeColor = Colors.blue;
+  Color get globalThemeColor => _globalThemeColor;
+
+  String _maimaiSkin = 'maimai_dx';
+  String get maimaiSkin => _maimaiSkin;
+  Color _maimaiThemeColor = Colors.green;
+  Color get maimaiThemeColor => _maimaiThemeColor;
+
+  String _chunithmSkin = 'chunithm';
+  String get chunithmSkin => _chunithmSkin;
+  Color _chunithmThemeColor = Colors.orange;
+  Color get chunithmThemeColor => _chunithmThemeColor;
+
   /// 初始化：读取启动页偏好并应用
   Future<void> init() async {
     final storage = getIt<StorageService>();
@@ -68,6 +87,43 @@ class GameProvider extends ChangeNotifier {
       StorageService.kStartupPage,
       _prefToString(pref),
     );
+    notifyListeners();
+  }
+
+  // --- 皮肤系统逻辑更新 ---
+  void setIndependentSkin(bool value) {
+    if (_isIndependentSkin == value) return;
+    _isIndependentSkin = value;
+    notifyListeners();
+  }
+
+  void setGlobalSkin(String skin) {
+    _globalSkin = skin;
+    notifyListeners();
+  }
+
+  void setGlobalThemeColor(Color color) {
+    _globalThemeColor = color;
+    notifyListeners();
+  }
+
+  void setMaimaiSkin(String skin) {
+    _maimaiSkin = skin;
+    notifyListeners();
+  }
+
+  void setMaimaiThemeColor(Color color) {
+    _maimaiThemeColor = color;
+    notifyListeners();
+  }
+
+  void setChunithmSkin(String skin) {
+    _chunithmSkin = skin;
+    notifyListeners();
+  }
+
+  void setChunithmThemeColor(Color color) {
+    _chunithmThemeColor = color;
     notifyListeners();
   }
 

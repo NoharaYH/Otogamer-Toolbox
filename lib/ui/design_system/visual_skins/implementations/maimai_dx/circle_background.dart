@@ -114,7 +114,14 @@ class MaimaiSkin extends SkinExtension {
     Color? subtitleColor,
     Color? dotColor,
   }) {
-    return this; // 皮肤是常量，不需要复制
+    return ThemeSkin(
+      lightColor: light ?? this.light,
+      mediumColor: medium ?? this.medium,
+      darkColor: dark ?? this.dark,
+      subtitleColor_: subtitleColor ?? this.subtitleColor,
+      dotColor_: dotColor ?? this.dotColor,
+      baseSkin: this,
+    );
   }
 }
 

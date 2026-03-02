@@ -83,6 +83,13 @@ class ChunithmSkin extends SkinExtension {
     Color? subtitleColor,
     Color? dotColor,
   }) {
-    return this;
+    return ThemeSkin(
+      lightColor: light ?? this.light,
+      mediumColor: medium ?? this.medium,
+      darkColor: dark ?? this.dark,
+      subtitleColor_: subtitleColor ?? this.subtitleColor,
+      dotColor_: dotColor ?? this.dotColor,
+      baseSkin: this,
+    );
   }
 }
