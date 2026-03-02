@@ -36,9 +36,7 @@ class ScoreSyncCard extends StatelessWidget {
                 : UiSizes.getCardBottomMargin(context),
           ),
           decoration: BoxDecoration(
-            color: UiColors.white.withValues(
-              alpha: 0.8,
-            ), // 0xCCFFFFFF -> 80% white
+            color: UiColors.white,
             borderRadius: BorderRadius.circular(UiSizes.cardRadius),
             boxShadow: [
               BoxShadow(
