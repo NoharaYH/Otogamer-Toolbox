@@ -35,6 +35,12 @@ class NavigationProvider extends ChangeNotifier {
   bool get isSettingsOpen => _isSettingsOpen;
   double get anchorY => _anchorY;
 
+  /// 启动时由外部（ScoreSyncPage init 回调）注入初始 Tag，不发通知。
+  /// 此方法仅在 Widget 首帧渲染前（postFrameCallback 内）调用。
+  void setInitialTag(PageTag tag) {
+    _currentTag = tag;
+  }
+
   /// 切换页面 (无全局路由，原地挂载)
   void switchTo(PageTag tag) {
     if (_currentTag == tag) {

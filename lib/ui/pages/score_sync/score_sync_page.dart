@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../application/shared/game_provider.dart';
+import '../../../application/shared/navigation_provider.dart';
 import '../../design_system/kit_shared/game_page_item.dart';
 import '../../design_system/kit_shared/kit_game_carousel.dart';
 
@@ -19,8 +20,7 @@ class ScoreSyncPage extends StatefulWidget {
   State<ScoreSyncPage> createState() => _ScoreSyncPageState();
 }
 
-class _ScoreSyncPageState extends State<ScoreSyncPage>
-    with WidgetsBindingObserver {
+class _ScoreSyncPageState extends State<ScoreSyncPage> {
   late final PageController _localController;
   bool _initialized = false;
 
@@ -31,19 +31,8 @@ class _ScoreSyncPageState extends State<ScoreSyncPage>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-
     final gameProvider = context.read<GameProvider>();
     _localController = PageController(initialPage: gameProvider.currentIndex);
-
-    if (!_initialized) {
-      _initialized = true;
-      gameProvider.init().then((_) {
-        if (mounted && _localController.hasClients) {
-          _localController.jumpToPage(gameProvider.currentIndex);
-        }
-      });
-    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -51,6 +40,19 @@ class _ScoreSyncPageState extends State<ScoreSyncPage>
             .toDouble();
       }
     });
+
+    if (!_initialized) {
+      _initialized = true;
+      gameProvider.init().then((initialTag) {
+        if (mounted) {
+          // 将解析出的目标大页面 Tag 静默注入 NavigationProvider
+          context.read<NavigationProvider>().setInitialTag(initialTag);
+          if (_localController.hasClients) {
+            _localController.jumpToPage(gameProvider.currentIndex);
+          }
+        }
+      });
+    }
 
     _localController.addListener(() {
       if (_localController.hasClients && _localController.page != null) {
@@ -60,16 +62,7 @@ class _ScoreSyncPageState extends State<ScoreSyncPage>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
-      context.read<GameProvider>().saveLastActiveState();
-    }
-  }
-
-  @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _localController.dispose();
     super.dispose();
   }

@@ -21,18 +21,35 @@ class RootPage extends StatefulWidget {
   State<RootPage> createState() => _RootPageState();
 }
 
-class _RootPageState extends State<RootPage> {
+class _RootPageState extends State<RootPage> with WidgetsBindingObserver {
   final GlobalKey _repaintBoundaryKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // 注册全局设置页捕获协议
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<NavigationProvider>().captureTask = _captureToSnapshot;
       }
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      final nav = context.read<NavigationProvider>();
+      // 传入真实大页面 Tag，确保回溯缓存记录正确位置
+      context.read<GameProvider>().saveLastActiveState(nav.currentTag);
+    }
   }
 
   Future<void> _captureToSnapshot() async {

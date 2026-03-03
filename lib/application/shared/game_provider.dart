@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../kernel/models/startup_pref_model.dart';
 import '../../kernel/services/storage_service.dart';
 import '../../kernel/di/injection.dart';
+import 'navigation_provider.dart';
 
 class GameProvider extends ChangeNotifier {
   int _currentIndex = 0;
@@ -37,8 +38,8 @@ class GameProvider extends ChangeNotifier {
   Color _chunithmThemeColor = Colors.orange;
   Color get chunithmThemeColor => _chunithmThemeColor;
 
-  /// 初始化：读取三段式启动页偏好并应用
-  Future<void> init() async {
+  /// 初始化：读取启动页偏好并应用，返回目标大页面 tag 供调用方注入 NavigationProvider。
+  Future<PageTag> init() async {
     final storage = getIt<StorageService>();
     final prefStr = await storage.read(StorageService.kStartupPrefConfig);
     final lastStateStr = await storage.read(StorageService.kLastActiveState);
@@ -46,14 +47,26 @@ class GameProvider extends ChangeNotifier {
     _startupPref = StartupPrefModel.parse(prefStr);
 
     int initialIndex = 0;
+    PageTag initialTag = PageTag.scoreSync;
 
     if (_startupPref.needsStateObserver) {
-      // 从回溯缓存中提取最后活跃状态
+      // 从回溯缓存中提取最后活跃状态（含大页面 Tag）
       final parsed = _parseLastActiveState(lastStateStr, _startupPref);
       initialIndex = parsed.index;
       _activeGame = parsed.game;
       _activeService = parsed.service;
+      initialTag = parsed.tag;
     } else {
+      // Primary 决定目标大页面
+      switch (_startupPref.primary) {
+        case StartupPrimary.detail:
+          initialTag = PageTag.musicData;
+          break;
+        default:
+          initialTag = PageTag.scoreSync;
+          break;
+      }
+      // Secondary 决定具体游戏索引
       switch (_startupPref.secondary) {
         case StartupSecondary.chu:
           initialIndex = 1;
@@ -70,6 +83,7 @@ class GameProvider extends ChangeNotifier {
     _currentIndex = initialIndex.clamp(0, 1);
     pageValueNotifier.value = _currentIndex.toDouble();
     notifyListeners();
+    return initialTag;
   }
 
   void setIndex(int index) {
@@ -91,12 +105,18 @@ class GameProvider extends ChangeNotifier {
   }
 
   /// 在 App 退出/挂起时调用，持久化当前活跃状态。
-  /// 懒触发原则：仅当偏好路径包含 last/inherit 时才实际写入，否则静默跳过。
-  Future<void> saveLastActiveState() async {
+  /// [currentPageTag] 由 RootPage 的生命周期监听器传入，记录用户真实所处的大页面。
+  /// 懒触发原则：仅当偏好路径为 Last 模式时才实际写入，否则静默跳过。
+  Future<void> saveLastActiveState(PageTag currentPageTag) async {
     if (!_startupPref.needsStateObserver) return;
 
+    // primary_id 写入真实的大页面标识（而非静态偏好枚举），确保下次回溯正确
+    final primaryIdStr = currentPageTag == PageTag.musicData
+        ? 'Detail'
+        : 'Sync';
+
     final payload = jsonEncode({
-      'primary_id': _startupPref.primary.serialize(),
+      'primary_id': primaryIdStr,
       'secondary_id': _activeGame,
       'tertiary_id': _activeService,
       'index': _currentIndex,
@@ -155,31 +175,37 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 解析回溯缓存，返回内容包含：game 标识、service 标识、页面索引。
+  /// 解析回溯缓存，返回内容包含：game 标识、service 标识、页面索引、大页面 Tag。
   ///
-  /// 局部降级规则（按 §6.4 层级限定权限）：
-  /// - Sync+Inherit 场景：若缓存记录的 secondary_id 不在 {Mai, Chu} 内，
-  ///   则降级至游戏默认选项而非全局降级，最大保留信息量。
-  static ({int index, String game, String service}) _parseLastActiveState(
-    String? raw,
-    StartupPrefModel pref,
-  ) {
-    const defaultResult = (index: 0, game: 'Mai', service: 'DivingFish');
+  /// primary_id 字段现在存储真实的大页面标识（"Sync" | "Detail"），而非静态偏好枚举。
+  /// 局部降级规则：ScoreSync 场景下若 secondary_id 不在 {Mai, Chu} 内则全局降级。
+  static ({int index, String game, String service, PageTag tag})
+  _parseLastActiveState(String? raw, StartupPrefModel pref) {
+    const defaultResult = (
+      index: 0,
+      game: 'Mai',
+      service: 'DivingFish',
+      tag: PageTag.scoreSync,
+    );
     if (raw == null || raw.isEmpty) return defaultResult;
     try {
       final map = jsonDecode(raw) as Map<String, dynamic>;
+      final primaryStr = map['primary_id'] as String? ?? 'Sync';
       final game = map['secondary_id'] as String? ?? 'Mai';
       final service = map['tertiary_id'] as String? ?? 'DivingFish';
-      int index = (map['index'] as int? ?? 0).clamp(0, 1);
+      final int index = (map['index'] as int? ?? 0).clamp(0, 1);
 
-      // 局部降级：当 Primary==Sync 但缓存记录不是 Sync 内的游戏时，强制降级至 Mai
-      if (pref.primary == StartupPrimary.sync &&
-          game != 'Mai' &&
-          game != 'Chu') {
+      // 由 primary_id 字符串还原大页面 tag
+      final tag = (primaryStr.toLowerCase() == 'detail')
+          ? PageTag.musicData
+          : PageTag.scoreSync;
+
+      // 局部降级：ScoreSync 场景只允许 Mai/Chu 的 game 标识
+      if (tag == PageTag.scoreSync && game != 'Mai' && game != 'Chu') {
         return defaultResult;
       }
 
-      return (index: index, game: game, service: service);
+      return (index: index, game: game, service: service, tag: tag);
     } catch (_) {
       return defaultResult;
     }
