@@ -1,21 +1,30 @@
 import 'package:flutter/material.dart';
-import '../../skin_extension.dart';
+import '../../core/app_theme.dart';
 import '../../../constants/assets.dart';
 
-/// 舞萌 DX - Circle 主题皮肤
-class MaimaiSkin extends SkinExtension {
-  const MaimaiSkin();
-
-  // ==================== 主题色定义 ====================
+@GameTheme()
+class CircleTheme extends AppTheme {
+  const CircleTheme();
 
   @override
-  Color get light => const Color(0xFFFFB7CD); // 浅粉 - 渐变起始
+  ThemeDomain get domain => ThemeDomain.maimai;
 
   @override
-  Color get medium => const Color.fromARGB(255, 255, 84, 138); // 主粉 - 按钮/激活态
+  String get themeTitle => 'Circle';
 
   @override
-  Color get dark => const Color.fromARGB(255, 239, 9, 109); // 深粉 - 渐变终点/边框
+  String get themeId => 'mai_circle';
+
+  @override
+  Color get light => const Color(0xFFFFB7CD);
+
+  @override
+  Color get medium => const Color.fromARGB(255, 255, 84, 138);
+
+  // 严格遵循兜底规范，如果需要特定暗色可返回，但如果是文字色可能会被外部强制转为 #2d2d2d，
+  // 视具体的渲染处而定，或者统一约束为不超过 #2d2d2d 的色域。
+  @override
+  Color get dark => const Color.fromARGB(255, 239, 9, 109);
 
   @override
   Color get subtitleColor => medium;
@@ -23,14 +32,11 @@ class MaimaiSkin extends SkinExtension {
   @override
   Color get dotColor => medium;
 
-  // ==================== 背景渲染 ====================
-
   @override
   Widget buildBackground(BuildContext context) {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 渐变底色
         Container(
           decoration: BoxDecoration(
             gradient: RadialGradient(
@@ -40,7 +46,6 @@ class MaimaiSkin extends SkinExtension {
             ),
           ),
         ),
-        // 旋转图案
         const _RotatingImage(
           assetPath: AppAssets.maimaiBgPattern,
           duration: Duration(seconds: 240),
@@ -63,7 +68,6 @@ class MaimaiSkin extends SkinExtension {
           scale: 1.7,
           reverse: true,
         ),
-        // 四角装饰
         Positioned(
           top: 0,
           left: 0,
@@ -104,28 +108,31 @@ class MaimaiSkin extends SkinExtension {
     );
   }
 
-  // ==================== ThemeExtension 必需方法 ====================
-
   @override
-  SkinExtension copyWith({
+  AppTheme copyWith({
     Color? light,
     Color? medium,
     Color? dark,
     Color? subtitleColor,
     Color? dotColor,
   }) {
-    return ThemeSkin(
+    // 强制色阶判定
+    final safeDark = (dark != null && dark.computeLuminance() > 0.3)
+        ? const Color(0xFF2D2D2D)
+        : (dark ?? this.dark);
+    return AppTheme.createDynamic(
+      domainVal: domain,
+      titleVal: themeTitle,
+      idVal: themeId,
       lightColor: light ?? this.light,
       mediumColor: medium ?? this.medium,
-      darkColor: dark ?? this.dark,
-      subtitleColor_: subtitleColor ?? this.subtitleColor,
-      dotColor_: dotColor ?? this.dotColor,
-      baseSkin: this,
+      darkColor: safeDark,
+      subtitleColorVal: subtitleColor ?? this.subtitleColor,
+      dotColorVal: dotColor ?? this.dotColor,
+      baseTheme: this,
     );
   }
 }
-
-// ==================== 内部旋转图片组件 ====================
 
 class _RotatingImage extends StatefulWidget {
   final String assetPath;

@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../application/shared/toast_provider.dart';
 import '../constants/colors.dart';
-import '../visual_skins/skin_extension.dart';
+import '../theme/core/app_theme.dart';
 import '../constants/sizes.dart';
 import '../constants/animations.dart';
 import '../kit_shared/kit_bounce_scaler.dart';
@@ -81,8 +81,8 @@ class _ScoreSyncModeTabsState extends State<ScoreSyncModeTabs>
 
   @override
   Widget build(BuildContext context) {
-    final skin = Theme.of(context).extension<SkinExtension>();
-    final Color activeColor = skin?.dark ?? UiColors.grey500;
+    final skin = Theme.of(context).extension<AppTheme>();
+    final Color activeColor = skin?.medium ?? UiColors.grey500;
 
     return IgnorePointer(
       ignoring: widget.isDisabled,

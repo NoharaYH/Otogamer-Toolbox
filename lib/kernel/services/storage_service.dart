@@ -16,6 +16,13 @@ class StorageService {
       'startup_pref_config'; // 'Primary:Secondary:Tertiary'
   static const kLastActiveState =
       'last_active_state_cache'; // JSON: {page, game}
+  static const kThemePreferences =
+      'theme_preferences'; // JSON: {skinId: {colorKey: '#HEX'}}
+  static const kActiveSkinId =
+      'active_skin_id'; // String: skinId of currently active skin
+  static const kThemeMode = 'theme_mode'; // String: 'global' or 'independent'
+  static const kMaiSkinId = 'mai_skin_id'; // String: skinId for maimai DX
+  static const kChuSkinId = 'chu_skin_id'; // String: skinId for chunithm
 
   // Generic Write
   Future<void> save(String key, String value) async {

@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import '../../../design_system/theme/domain_theme/theme_mai/circle.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../design_system/constants/sizes.dart';
 import '../../../design_system/constants/colors.dart';
-import '../../../design_system/visual_skins/skin_extension.dart';
-import '../../../design_system/visual_skins/implementations/maimai_dx/circle_background.dart';
+import '../../../design_system/theme/core/app_theme.dart';
 import '../../../design_system/kit_score_sync/score_sync_card.dart';
 import '../../../design_system/kit_score_sync/score_sync_form.dart';
 import '../../../design_system/kit_score_sync/score_sync_token_field.dart';
@@ -50,7 +50,7 @@ class _ScoreSyncAssemblyState extends State<ScoreSyncAssembly> {
     return Consumer<TransferProvider>(
       builder: (context, provider, _) {
         final skin =
-            Theme.of(context).extension<SkinExtension>() ?? const MaimaiSkin();
+            Theme.of(context).extension<AppTheme>() ?? const CircleTheme();
 
         // 验证逻辑与准备状态
         final needsDf = widget.mode == 0 || widget.mode == 1;
@@ -129,7 +129,7 @@ class _ScoreSyncAssemblyState extends State<ScoreSyncAssembly> {
   Widget _buildSuccessView(
     BuildContext context,
     TransferProvider provider,
-    SkinExtension skin,
+    AppTheme skin,
   ) {
     final isCurrentTracking =
         provider.isTracking && provider.trackingGameType == widget.gameType;

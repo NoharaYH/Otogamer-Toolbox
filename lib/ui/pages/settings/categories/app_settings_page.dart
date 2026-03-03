@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../kernel/models/startup_pref_model.dart';
 import '../../../../application/shared/game_provider.dart';
 import '../../../design_system/constants/sizes.dart';
-import '../../../design_system/visual_skins/skin_extension.dart';
+import '../../../design_system/theme/core/app_theme.dart';
 import '../../../design_system/kit_setting/setting_card.dart';
 import '../../../design_system/kit_setting/setting_menu.dart';
 import '../../../design_system/kit_setting/setting_expandable_menu.dart';
@@ -79,7 +79,7 @@ class _StartupPrefMenuState extends State<StartupPrefMenu> {
 
   @override
   Widget build(BuildContext context) {
-    final skin = Theme.of(context).extension<SkinExtension>()!;
+    final skin = Theme.of(context).extension<AppTheme>()!;
     final accent = skin.medium;
 
     final showSecondary =

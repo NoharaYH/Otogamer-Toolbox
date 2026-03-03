@@ -1,29 +1,34 @@
 import 'package:flutter/material.dart';
-import '../../skin_extension.dart';
+import '../../core/app_theme.dart';
 import '../../../constants/assets.dart';
 
-/// 中二节奏 - Verse Town 主题皮肤
-class ChunithmSkin extends SkinExtension {
-  const ChunithmSkin();
-
-  // ==================== 主题色定义 ====================
+@GameTheme()
+class VerseTheme extends AppTheme {
+  const VerseTheme();
 
   @override
-  Color get light => const Color.fromARGB(255, 165, 208, 255); // 浅蓝 - 渐变起始
+  ThemeDomain get domain => ThemeDomain.chunithm;
 
   @override
-  Color get medium => const Color.fromARGB(255, 111, 140, 255); // 金黄 - 按钮/激活态
+  String get themeTitle => 'Verse';
 
   @override
-  Color get dark => const Color.fromARGB(255, 0, 98, 255); // 深蓝 - 边框/阴影
+  String get themeId => 'chu_verse';
+
+  @override
+  Color get light => const Color.fromARGB(255, 165, 208, 255);
+
+  @override
+  Color get medium => const Color.fromARGB(255, 111, 140, 255);
+
+  @override
+  Color get dark => const Color.fromARGB(255, 0, 98, 255);
 
   @override
   Color get subtitleColor => medium;
 
   @override
   Color get dotColor => medium;
-
-  // ==================== 背景渲染 ====================
 
   @override
   Widget buildBackground(BuildContext context) {
@@ -73,23 +78,24 @@ class ChunithmSkin extends SkinExtension {
     );
   }
 
-  // ==================== ThemeExtension 必需方法 ====================
-
   @override
-  SkinExtension copyWith({
+  AppTheme copyWith({
     Color? light,
     Color? medium,
     Color? dark,
     Color? subtitleColor,
     Color? dotColor,
   }) {
-    return ThemeSkin(
+    return AppTheme.createDynamic(
+      domainVal: domain,
+      titleVal: themeTitle,
+      idVal: themeId,
       lightColor: light ?? this.light,
       mediumColor: medium ?? this.medium,
       darkColor: dark ?? this.dark,
-      subtitleColor_: subtitleColor ?? this.subtitleColor,
-      dotColor_: dotColor ?? this.dotColor,
-      baseSkin: this,
+      subtitleColorVal: subtitleColor ?? this.subtitleColor,
+      dotColorVal: dotColor ?? this.dotColor,
+      baseTheme: this,
     );
   }
 }

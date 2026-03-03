@@ -10,9 +10,10 @@ import 'score_sync/score_sync_page.dart';
 import 'settings/settings_page.dart';
 import '../design_system/kit_navigation/nav_deck_overlay.dart';
 import '../design_system/constants/sizes.dart';
-import '../design_system/visual_skins/implementations/defaut_skin/star_background.dart';
+import '../design_system/theme/theme_catalog.dart';
 import '../design_system/kit_shared/kit_action_circle.dart';
 import '../design_system/page_shell.dart';
+import '../design_system/theme/core/app_theme.dart';
 
 class RootPage extends StatefulWidget {
   const RootPage({super.key});
@@ -52,20 +53,18 @@ class _RootPageState extends State<RootPage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _captureToSnapshot() async {
+  Future<ui.Image?> _captureToSnapshot() async {
     try {
       final boundary =
           _repaintBoundaryKey.currentContext?.findRenderObject()
               as RenderRepaintBoundary?;
-      if (boundary == null) return;
+      if (boundary == null) return null;
 
       // 降额捕获 (Downsampling): 既然要模糊，1.0 的像素比足够快且省内存
-      final ui.Image image = await boundary.toImage(pixelRatio: 1.0);
-      if (mounted) {
-        context.read<NavigationProvider>().setBgSnapshot(image);
-      }
+      return await boundary.toImage(pixelRatio: 1.0);
     } catch (e) {
       debugPrint('Snapshot Capture Failed: $e');
+      return null;
     }
   }
 
@@ -78,11 +77,40 @@ class _RootPageState extends State<RootPage> with WidgetsBindingObserver {
         RepaintBoundary(
           key: _repaintBoundaryKey,
           child: PageShell(
-            backgroundOverride: AnimatedBuilder(
-              animation: context.read<GameProvider>().pageValueNotifier,
-              builder: (context, _) {
-                return const StarBackgroundSkin().buildBackground(context);
-              },
+            backgroundOverride: Consumer<GameProvider>(
+              builder: (context, gp, _) => AnimatedBuilder(
+                animation: gp.pageValueNotifier,
+                builder: (context, _) {
+                  if (gp.isThemeGlobal) {
+                    final baseSkin = ThemeCatalog.findThemeById(
+                      gp.activeSkinId,
+                    );
+                    return gp.resolvedTheme(baseSkin).buildBackground(context);
+                  } else {
+                    final double t = gp.pageValueNotifier.value.clamp(0.0, 1.0);
+                    final maiTheme = ThemeCatalog.findThemeById(gp.maiSkinId);
+                    final chuTheme = ThemeCatalog.findThemeById(gp.chuSkinId);
+
+                    final maiSkin = gp.resolvedTheme(maiTheme);
+                    final chuSkin = gp.resolvedTheme(chuTheme);
+
+                    // 独立模式背景：跨域渐隐过渡 (Cross-fade between domains)
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // 底层：舞萌背景 (t=1.0 时完全隐藏)
+                        if (t < 1.0) maiSkin.buildBackground(context),
+                        // 顶层：中二背景 (根据进度 t 决定透明度)
+                        if (t > 0.0)
+                          Opacity(
+                            opacity: t,
+                            child: chuSkin.buildBackground(context),
+                          ),
+                      ],
+                    );
+                  }
+                },
+              ),
             ),
             child: Stack(
               children: [
@@ -140,64 +168,107 @@ class _RootPageState extends State<RootPage> with WidgetsBindingObserver {
                 ),
 
                 // 3. 全局页眉操作区
-                AnimatedBuilder(
-                  animation: context.read<GameProvider>().pageValueNotifier,
-                  builder: (context, _) {
-                    const skin = StarBackgroundSkin();
-                    final themeColor = skin.medium;
+                Consumer<GameProvider>(
+                  builder: (context, gp, _) => AnimatedBuilder(
+                    animation: gp.pageValueNotifier,
+                    builder: (context, _) {
+                      AppTheme resolvedSkin;
+                      if (gp.isThemeGlobal) {
+                        final baseSkin = ThemeCatalog.findThemeById(
+                          gp.activeSkinId,
+                        );
+                        resolvedSkin = gp.resolvedTheme(baseSkin);
+                      } else {
+                        final double page = gp.pageValueNotifier.value.clamp(
+                          0.0,
+                          1.0,
+                        );
+                        final maiSkin = gp.resolvedTheme(
+                          ThemeCatalog.findThemeById(gp.maiSkinId),
+                        );
+                        final chuSkin = gp.resolvedTheme(
+                          ThemeCatalog.findThemeById(gp.chuSkinId),
+                        );
+                        resolvedSkin = maiSkin.lerp(chuSkin, page);
+                      }
+                      final themeColor = resolvedSkin.medium;
 
-                    return Positioned(
-                      top: UiSizes.getTopMarginWithSafeArea(context) + 12.0,
-                      right: UiSizes.getHorizontalMargin(context) + 12.0,
-                      child: Consumer<NavigationProvider>(
-                        builder: (context, nav, child) {
-                          return Container(
-                            padding: EdgeInsets.zero,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                KitActionCircle(
-                                  icon: Icons.settings,
-                                  color: themeColor,
-                                  onTap: () => nav.openSettings(),
-                                ),
-                                const SizedBox(width: UiSizes.spaceS),
-                                Builder(
-                                  builder: (btnCtx) => KitActionCircle(
-                                    icon: Icons.menu_open,
+                      return Positioned(
+                        top: UiSizes.getTopMarginWithSafeArea(context) + 12.0,
+                        right: UiSizes.getHorizontalMargin(context) + 12.0,
+                        child: Consumer<NavigationProvider>(
+                          builder: (context, nav, child) {
+                            return Container(
+                              padding: EdgeInsets.zero,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  KitActionCircle(
+                                    icon: Icons.settings,
                                     color: themeColor,
-                                    onTap: () {
-                                      final RenderBox box =
-                                          btnCtx.findRenderObject()
-                                              as RenderBox;
-                                      final position = box.localToGlobal(
-                                        Offset.zero,
-                                      );
-                                      nav.openDeck(
-                                        anchorY: position.dy + box.size.height,
-                                      );
-                                    },
+                                    onTap: () => nav.openSettings(),
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
+                                  const SizedBox(width: UiSizes.spaceS),
+                                  Builder(
+                                    builder: (btnCtx) => KitActionCircle(
+                                      icon: Icons.menu_open,
+                                      color: themeColor,
+                                      onTap: () {
+                                        final RenderBox box =
+                                            btnCtx.findRenderObject()
+                                                as RenderBox;
+                                        final position = box.localToGlobal(
+                                          Offset.zero,
+                                        );
+                                        nav.openDeck(
+                                          anchorY:
+                                              position.dy + box.size.height,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
                 ),
 
                 // 4. 悬浮胶囊覆盖层
-                AnimatedBuilder(
-                  animation: context.read<GameProvider>().pageValueNotifier,
-                  builder: (context, _) {
-                    const skin = StarBackgroundSkin();
-                    return Theme(
-                      data: Theme.of(context).copyWith(extensions: [skin]),
-                      child: const Positioned.fill(child: NavDeckOverlay()),
-                    );
-                  },
+                Consumer<GameProvider>(
+                  builder: (context, gp, _) => AnimatedBuilder(
+                    animation: gp.pageValueNotifier,
+                    builder: (context, _) {
+                      AppTheme resolvedSkin;
+                      if (gp.isThemeGlobal) {
+                        final baseSkin = ThemeCatalog.findThemeById(
+                          gp.activeSkinId,
+                        );
+                        resolvedSkin = gp.resolvedTheme(baseSkin);
+                      } else {
+                        final double page = gp.pageValueNotifier.value.clamp(
+                          0.0,
+                          1.0,
+                        );
+                        final maiSkin = gp.resolvedTheme(
+                          ThemeCatalog.findThemeById(gp.maiSkinId),
+                        );
+                        final chuSkin = gp.resolvedTheme(
+                          ThemeCatalog.findThemeById(gp.chuSkinId),
+                        );
+                        resolvedSkin = maiSkin.lerp(chuSkin, page);
+                      }
+                      return Theme(
+                        data: Theme.of(
+                          context,
+                        ).copyWith(extensions: [resolvedSkin]),
+                        child: const Positioned.fill(child: NavDeckOverlay()),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),

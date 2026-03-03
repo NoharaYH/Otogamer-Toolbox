@@ -1,8 +1,8 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 import '../../../../logic/mai_music_data/data_sync/mai_sync_handler.dart';
-import '../visual_skins/skin_extension.dart';
+import '../theme/core/app_theme.dart';
 import '../constants/sizes.dart';
 import '../constants/strings.dart';
 import '../kit_shared/confirm_button.dart';
@@ -101,7 +101,7 @@ class _KitMusicSyncPromptState extends State<KitMusicSyncPrompt> {
 
   @override
   Widget build(BuildContext context) {
-    final skin = Theme.of(context).extension<SkinExtension>()!;
+    final skin = Theme.of(context).extension<AppTheme>()!;
 
     return AnimatedOpacity(
       opacity: _isVisible ? 1.0 : 0.0,
@@ -154,7 +154,7 @@ class _KitMusicSyncPromptState extends State<KitMusicSyncPrompt> {
     );
   }
 
-  Widget _buildPromptContent(SkinExtension skin) {
+  Widget _buildPromptContent(AppTheme skin) {
     return SizedBox(
       height: 140,
       child: Column(
@@ -207,7 +207,7 @@ class _KitMusicSyncPromptState extends State<KitMusicSyncPrompt> {
     );
   }
 
-  Widget _buildProgressContent(SkinExtension skin) {
+  Widget _buildProgressContent(AppTheme skin) {
     final String dots = '.' * _dotCount;
 
     String leftText = '';

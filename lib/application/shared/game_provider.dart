@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../kernel/models/startup_pref_model.dart';
+import '../../kernel/models/theme_preferences_model.dart';
 import '../../kernel/services/storage_service.dart';
 import '../../kernel/di/injection.dart';
+import '../../ui/design_system/theme/core/app_theme.dart';
 import 'navigation_provider.dart';
 
 class GameProvider extends ChangeNotifier {
@@ -19,32 +21,40 @@ class GameProvider extends ChangeNotifier {
   StartupPrefModel _startupPref = StartupPrefModel.defaultFallback;
   StartupPrefModel get startupPref => _startupPref;
 
-  // --- 皮肤系统相关 ---
-  bool _isIndependentSkin = false;
-  bool get isIndependentSkin => _isIndependentSkin;
+  // --- 主题偏好 (Factory Pump 注水层) ---
+  ThemePreferencesModel _themePrefs = ThemePreferencesModel.empty;
+  ThemePreferencesModel get themePrefs => _themePrefs;
 
-  String _globalSkin = 'default';
-  String get globalSkin => _globalSkin;
-  Color _globalThemeColor = Colors.blue;
-  Color get globalThemeColor => _globalThemeColor;
+  /// 当前全局活跃皮肤 ID（默认为 star_trails）
+  String _activeSkinId = 'star_trails';
+  String get activeSkinId => _activeSkinId;
 
-  String _maimaiSkin = 'maimai_dx';
-  String get maimaiSkin => _maimaiSkin;
-  Color _maimaiThemeColor = Colors.green;
-  Color get maimaiThemeColor => _maimaiThemeColor;
+  // --- 主题应用模式与独立皮肤 ---
+  bool _isThemeGlobal = true;
+  bool get isThemeGlobal => _isThemeGlobal;
 
-  String _chunithmSkin = 'chunithm';
-  String get chunithmSkin => _chunithmSkin;
-  Color _chunithmThemeColor = Colors.orange;
-  Color get chunithmThemeColor => _chunithmThemeColor;
+  String _maiSkinId = 'mai_circle';
+  String get maiSkinId => _maiSkinId;
+
+  String _chuSkinId = 'chu_verse';
+  String get chuSkinId => _chuSkinId;
 
   /// 初始化：读取启动页偏好并应用，返回目标大页面 tag 供调用方注入 NavigationProvider。
   Future<PageTag> init() async {
     final storage = getIt<StorageService>();
     final prefStr = await storage.read(StorageService.kStartupPrefConfig);
     final lastStateStr = await storage.read(StorageService.kLastActiveState);
+    final themePrefsStr = await storage.read(StorageService.kThemePreferences);
 
     _startupPref = StartupPrefModel.parse(prefStr);
+    _themePrefs = ThemePreferencesModel.parse(themePrefsStr);
+    _activeSkinId =
+        await storage.read(StorageService.kActiveSkinId) ?? 'star_trails';
+
+    final themeModeStr = await storage.read(StorageService.kThemeMode);
+    _isThemeGlobal = themeModeStr != 'independent';
+    _maiSkinId = await storage.read(StorageService.kMaiSkinId) ?? 'mai_circle';
+    _chuSkinId = await storage.read(StorageService.kChuSkinId) ?? 'chu_verse';
 
     int initialIndex = 0;
     PageTag initialTag = PageTag.scoreSync;
@@ -138,42 +148,69 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- 皮肤系统逻辑更新 ---
-  void setIndependentSkin(bool value) {
-    if (_isIndependentSkin == value) return;
-    _isIndependentSkin = value;
+  // --- 主题偏好逻辑 (Factory Pump) ---
+
+  /// 将用户自定义色通过 copyWith 注水到基础主题实例。
+  /// 若当前主题无任何自定义记录，直接返回 [base] 本身，零分配。
+  AppTheme resolvedTheme(AppTheme base) {
+    if (!_themePrefs.hasCustomization(base.themeId)) return base;
+    return base.copyWith(
+      light: _themePrefs.get(base.themeId, 'light'),
+      medium: _themePrefs.get(base.themeId, 'medium'),
+      dark: _themePrefs.get(base.themeId, 'dark'),
+      dotColor: _themePrefs.get(base.themeId, 'dotColor'),
+      subtitleColor: _themePrefs.get(base.themeId, 'subtitleColor'),
+    );
+  }
+
+  /// 将新的主题偏好应用到内存并异步落盘。
+  /// 由调色面板的 Debouncer 决议具体调用时机。
+  Future<void> setThemePreferences(ThemePreferencesModel prefs) async {
+    if (_themePrefs == prefs) return;
+    _themePrefs = prefs;
+    await getIt<StorageService>().save(
+      StorageService.kThemePreferences,
+      prefs.serialize(),
+    );
     notifyListeners();
   }
 
-  void setGlobalSkin(String skin) {
-    _globalSkin = skin;
+  /// 切换当前全局皮肤并持久化。
+  /// [skinId] 必须是 skin_catalog.allSkins 中存在的 skinId。
+  Future<void> setActiveSkin(String skinId) async {
+    if (_activeSkinId == skinId) return;
+    _activeSkinId = skinId;
+    await getIt<StorageService>().save(StorageService.kActiveSkinId, skinId);
     notifyListeners();
   }
 
-  void setGlobalThemeColor(Color color) {
-    _globalThemeColor = color;
+  Future<void> setThemeMode(bool isGlobal) async {
+    if (_isThemeGlobal == isGlobal) return;
+    _isThemeGlobal = isGlobal;
+    await getIt<StorageService>().save(
+      StorageService.kThemeMode,
+      isGlobal ? 'global' : 'independent',
+    );
     notifyListeners();
   }
 
-  void setMaimaiSkin(String skin) {
-    _maimaiSkin = skin;
+  Future<void> setMaiSkin(String skinId) async {
+    if (_maiSkinId == skinId) return;
+    _maiSkinId = skinId;
+    await getIt<StorageService>().save(StorageService.kMaiSkinId, skinId);
     notifyListeners();
   }
 
-  void setMaimaiThemeColor(Color color) {
-    _maimaiThemeColor = color;
+  Future<void> setChuSkin(String skinId) async {
+    if (_chuSkinId == skinId) return;
+    _chuSkinId = skinId;
+    await getIt<StorageService>().save(StorageService.kChuSkinId, skinId);
     notifyListeners();
   }
 
-  void setChunithmSkin(String skin) {
-    _chunithmSkin = skin;
-    notifyListeners();
-  }
-
-  void setChunithmThemeColor(Color color) {
-    _chunithmThemeColor = color;
-    notifyListeners();
-  }
+  // --- 弃用字段兼容桌 (COMPAT_STUBS) ---
+  // 原有的 setGlobalSkin / setMaimaiSkin 等内存字段已午退 (无持久化)。
+  // 如果其他页面依然引用它们，可删除对应调用再展开其他即可。
 
   /// 解析回溯缓存，返回内容包含：game 标识、service 标识、页面索引、大页面 Tag。
   ///

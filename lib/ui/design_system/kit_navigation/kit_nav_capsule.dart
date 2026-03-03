@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../constants/colors.dart';
-import '../visual_skins/skin_extension.dart';
+import '../theme/core/app_theme.dart';
 import '../constants/animations.dart';
 
 class KitNavCapsule extends StatefulWidget {
@@ -43,9 +43,9 @@ class _KitNavCapsuleState extends State<KitNavCapsule> {
 
   @override
   Widget build(BuildContext context) {
-    // 由于 NavDeckOverlay 在 RootPage 层，其 context 可能尚未被 KitGameCarousel 注入 SkinExtension
+    // 由于 NavDeckOverlay 在 RootPage 层，其 context 可能尚未被 KitGameCarousel 注入 AppTheme
     // 所以我们需要做安全的 null 处理，并提供 fallback 颜色
-    final skin = Theme.of(context).extension<SkinExtension>();
+    final skin = Theme.of(context).extension<AppTheme>();
 
     final bgColor = UiColors.white;
 

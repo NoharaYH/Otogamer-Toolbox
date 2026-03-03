@@ -1,17 +1,17 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../application/shared/game_provider.dart';
 import '../../../application/shared/navigation_provider.dart';
 import '../../design_system/kit_shared/game_page_item.dart';
 import '../../design_system/kit_shared/kit_game_carousel.dart';
+import '../../design_system/theme/theme_catalog.dart';
 
 // Contents
 import 'components/mai_sync_page.dart';
 import 'components/chu_sync_page.dart';
 
 // Skins
-import '../../design_system/visual_skins/implementations/defaut_skin/star_background.dart';
 
 class ScoreSyncPage extends StatefulWidget {
   const ScoreSyncPage({super.key});
@@ -69,14 +69,28 @@ class _ScoreSyncPageState extends State<ScoreSyncPage> {
 
   @override
   Widget build(BuildContext context) {
-    final gameProvider = context.read<GameProvider>();
+    final gameProvider = context.watch<GameProvider>();
+
+    final maiSkinId = gameProvider.isThemeGlobal
+        ? gameProvider.activeSkinId
+        : gameProvider.maiSkinId;
+    final chuSkinId = gameProvider.isThemeGlobal
+        ? gameProvider.activeSkinId
+        : gameProvider.chuSkinId;
+
+    final maiSkin = gameProvider.resolvedTheme(
+      ThemeCatalog.findThemeById(maiSkinId),
+    );
+    final chuSkin = gameProvider.resolvedTheme(
+      ThemeCatalog.findThemeById(chuSkinId),
+    );
 
     return KitGameCarousel(
       controller: _localController,
       onPageChanged: gameProvider.onPageChanged,
       items: [
         GamePageItem(
-          skin: const StarBackgroundSkin(),
+          skin: maiSkin,
           content: MaiSyncPage(
             mode: _transferModes[0]!,
             onModeChanged: (val) {
@@ -90,7 +104,7 @@ class _ScoreSyncPageState extends State<ScoreSyncPage> {
           title: 'Maimai DX',
         ),
         GamePageItem(
-          skin: const StarBackgroundSkin(),
+          skin: chuSkin,
           content: ChuSyncPage(
             mode: _transferModes[1]!,
             onModeChanged: (val) {

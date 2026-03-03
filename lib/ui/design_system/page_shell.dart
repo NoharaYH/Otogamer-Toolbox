@@ -1,8 +1,8 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'constants/sizes.dart';
 import 'constants/colors.dart';
-import 'visual_skins/skin_extension.dart';
+import 'theme/core/app_theme.dart';
 
 /// 页面外壳
 /// 提供：背景 + 白色毛玻璃底板 + 内容区域
@@ -31,7 +31,7 @@ class PageShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 1. Get current skin from ThemeExtension
-    final skin = Theme.of(context).extension<SkinExtension>();
+    final skin = Theme.of(context).extension<AppTheme>();
 
     // 2. Resolve background: Override > Skin Background > Fallback
     final Widget background =

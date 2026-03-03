@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../design_system/constants/sizes.dart';
-import '../../../design_system/visual_skins/skin_extension.dart';
+import '../../../design_system/theme/core/app_theme.dart';
 
 /// A reusable wrapper for the game logo and content area on sync pages.
 class ScoreSyncLogoWrapper extends StatelessWidget {
@@ -35,7 +35,7 @@ class ScoreSyncLogoWrapper extends StatelessWidget {
                   top: UiSizes.spaceXL,
                   child: Builder(
                     builder: (context) {
-                      final skin = Theme.of(context).extension<SkinExtension>();
+                      final skin = Theme.of(context).extension<AppTheme>();
                       final color =
                           skin?.subtitleColor ?? themeColor ?? Colors.blue;
                       return Text(

@@ -21,7 +21,18 @@ class NavigationProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 缓存垃圾回收池 (用于 Layer Swap 即时变轨)
+  final List<ui.Image> _snapshotGarbage = [];
+
+  void registerTempSnapshot(ui.Image img) {
+    _snapshotGarbage.add(img);
+  }
+
   void clearBgSnapshot() {
+    for (var img in _snapshotGarbage) {
+      img.dispose();
+    }
+    _snapshotGarbage.clear();
     _bgSnapshot?.dispose();
     _bgSnapshot = null;
     notifyListeners();
@@ -75,7 +86,7 @@ class NavigationProvider extends ChangeNotifier {
   }
 
   /// 外部设置的捕获任务 (用于在打开前执行 RepaintBoundary.toImage)
-  Future<void> Function()? captureTask;
+  Future<ui.Image?> Function()? captureTask;
 
   /// 打开设置页（作为叠加层）
   void openSettings() async {
@@ -84,7 +95,8 @@ class NavigationProvider extends ChangeNotifier {
 
     // 如果注册了捕获任务，则优先执行 (Snapshot Isolation)
     if (captureTask != null) {
-      await captureTask!();
+      final img = await captureTask!();
+      setBgSnapshot(img);
     }
 
     _isSettingsOpen = true;

@@ -1,28 +1,35 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../skin_extension.dart';
+import '../core/app_theme.dart';
 
-/// 默认星轨背景皮肤 - 同时作用于舞萌和中二 Standard Background
-class StarBackgroundSkin extends SkinExtension {
-  const StarBackgroundSkin();
-
-  // ==================== 主题色定义 (基于 HTML 中的冷色调) ====================
+@GameTheme()
+class StarTrailsTheme extends AppTheme {
+  const StarTrailsTheme();
 
   @override
-  Color get light => const Color(0xFF1A4FBD); // 蓝色流光
+  ThemeDomain get domain => ThemeDomain.universal;
 
   @override
-  Color get medium => const Color(0xFF6A1EBD); // 紫色流光 - 主题色
+  String get themeTitle => 'Star Trails';
 
   @override
-  Color get dark => const Color(0xFF05080A); // 深邃底色
+  String get themeId => 'star_trails';
 
   @override
-  Color get subtitleColor => Colors.white; // 默认星轨背景下使用白色副标题
+  Color get light => const Color(0xFF1A4FBD);
 
   @override
-  Color get dotColor => Colors.white; // 默认背景下指示点采用纯白色
+  Color get medium => const Color(0xFF6A1EBD);
+
+  @override
+  Color get dark => const Color(0xFF05080A); // 已满足 <= #2D2D2D 兜底，或在内部提供
+
+  @override
+  Color get subtitleColor => Colors.white;
+
+  @override
+  Color get dotColor => Colors.white;
 
   @override
   Widget buildBackground(BuildContext context) {
@@ -34,20 +41,23 @@ class StarBackgroundSkin extends SkinExtension {
   }
 
   @override
-  SkinExtension copyWith({
+  AppTheme copyWith({
     Color? light,
     Color? medium,
     Color? dark,
     Color? subtitleColor,
     Color? dotColor,
   }) {
-    return ThemeSkin(
+    return AppTheme.createDynamic(
+      domainVal: domain,
+      titleVal: themeTitle,
+      idVal: themeId,
       lightColor: light ?? this.light,
       mediumColor: medium ?? this.medium,
       darkColor: dark ?? this.dark,
-      subtitleColor_: subtitleColor ?? this.subtitleColor,
-      dotColor_: dotColor ?? this.dotColor,
-      baseSkin: this,
+      subtitleColorVal: subtitleColor ?? this.subtitleColor,
+      dotColorVal: dotColor ?? this.dotColor,
+      baseTheme: this,
     );
   }
 }
@@ -71,8 +81,7 @@ class _StarBackgroundState extends State<_StarBackground>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final List<_AuroraBlobDNA> _auroraBlobs;
-  final math.Random _random = math.Random(1337); // 固定种子保证 UI 稳定性
-  // 记录初始化时间戳，用于计算相对时间，避免大基数导致的浮点精度丢失
+  final math.Random _random = math.Random(1337);
   late final int _baseTime = DateTime.now().millisecondsSinceEpoch;
 
   @override
@@ -83,18 +92,16 @@ class _StarBackgroundState extends State<_StarBackground>
       duration: const Duration(seconds: 20),
     )..repeat(reverse: true);
 
-    // 基于 DNA 的色块预定义 (融入皮肤色系并增加辅助色)
     _auroraBlobs = _generateBlobDNA();
   }
 
   List<_AuroraBlobDNA> _generateBlobDNA() {
-    // 注入亮色、中性色以及对比色实现复杂流光
     final coreColors = [
       widget.lightColor,
       widget.mediumColor,
-      const Color(0xFF0891B2), // Cyan 600
-      const Color(0xFFDB2777), // Pink 600
-      const Color(0xFF4F46E5), // Indigo 600
+      const Color(0xFF0891B2),
+      const Color(0xFFDB2777),
+      const Color(0xFF4F46E5),
       widget.lightColor.withValues(alpha: 0.8),
     ];
 
@@ -109,9 +116,7 @@ class _StarBackgroundState extends State<_StarBackground>
             (_random.nextDouble() > 0.5 ? 1 : -1) *
             (0.5 + _random.nextDouble()),
         phaseOffset: _random.nextDouble() * math.pi * 2,
-        color: coreColors[index % coreColors.length].withValues(
-          alpha: 0.68,
-        ), // 亮度提高 50% (0.45 * 1.5)
+        color: coreColors[index % coreColors.length].withValues(alpha: 0.68),
       );
     });
   }
@@ -128,8 +133,6 @@ class _StarBackgroundState extends State<_StarBackground>
       fit: StackFit.expand,
       children: [
         Container(color: widget.darkColor),
-
-        // 1. 流光层：Aurora Mesh Gradient
         Positioned.fill(
           child: ImageFiltered(
             imageFilter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
@@ -149,13 +152,10 @@ class _StarBackgroundState extends State<_StarBackground>
             ),
           ),
         ),
-
-        // 2. 星轨层
         Positioned.fill(
           child: AnimatedBuilder(
             animation: _controller,
             builder: (context, _) {
-              // 使用相对时间偏移，确保传入 Painter 的数值量级在安全范围内
               final now = DateTime.now().millisecondsSinceEpoch;
               final relativeMs = now - _baseTime;
               return CustomPaint(
@@ -164,8 +164,6 @@ class _StarBackgroundState extends State<_StarBackground>
             },
           ),
         ),
-
-        // 3. 噪点与阴影叠加层 (提升质感)
         Positioned.fill(
           child: DecoratedBox(
             decoration: BoxDecoration(
@@ -186,10 +184,7 @@ class _StarBackgroundState extends State<_StarBackground>
   }
 
   Widget _buildAuroraBlob(Size screenSize, _AuroraBlobDNA dna, double t) {
-    // 大小提高 100% (0.9 -> 1.8)
     final baseSize = math.min(screenSize.width, screenSize.height) * 1.8;
-
-    // 位置计算
     final x = lerpDouble(
       dna.startX * screenSize.width,
       dna.endX * screenSize.width,
@@ -201,7 +196,6 @@ class _StarBackgroundState extends State<_StarBackground>
       t,
     )!;
 
-    // 非均匀形态扭曲
     final scaleX =
         dna.scaleBase + (math.sin(t * math.pi * 2 + dna.phaseOffset) * 0.2);
     final scaleY =
@@ -226,7 +220,6 @@ class _StarBackgroundState extends State<_StarBackground>
   }
 }
 
-/// 色块 DNA 模型
 class _AuroraBlobDNA {
   final double startX, endX, startY, endY;
   final double scaleBase;
@@ -260,11 +253,8 @@ class _StarTrailPainter extends CustomPainter {
     _cachedStars = List.generate(300, (i) {
       final radiusFactor = random.nextDouble();
       final arcLen = 0.05 + random.nextDouble() * ((math.pi * 2 / 5) - 0.05);
-
-      // 目标：30-60秒转一周 (弧度/毫秒)
       final periodSeconds = 30.0 + random.nextDouble() * 30.0;
       final angularSpeed = (2 * math.pi) / (periodSeconds * 1000.0);
-
       final initialAngle = random.nextDouble() * math.pi * 2;
       final opacity = 0.2 + random.nextDouble() * 0.5;
       final isWhite = random.nextDouble() > 0.1;
@@ -272,7 +262,6 @@ class _StarTrailPainter extends CustomPainter {
           ? Colors.white.withOpacity(opacity)
           : const Color(0xFFB4DCFF).withOpacity(opacity * 0.6);
       final strokeWidth = (0.6 + random.nextDouble() * 1.0) * 2.0;
-
       return _StarData(
         radiusFactor: radiusFactor,
         arcLen: arcLen,
@@ -296,13 +285,10 @@ class _StarTrailPainter extends CustomPainter {
 
     for (final star in stars) {
       final radius = star.radiusFactor * maxRadius;
-      // 增加模运算，确保角度始终在 [0, 2π] 范围内，极致规避精度偏离
       final currentAngle =
           (star.initialAngle - (star.angularSpeed * elapsedMs)) % (math.pi * 2);
-
       paint.color = star.color;
       paint.strokeWidth = star.strokeWidth;
-
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         currentAngle,

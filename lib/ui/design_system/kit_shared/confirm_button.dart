@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../constants/colors.dart';
-import '../visual_skins/skin_extension.dart';
+import '../theme/core/app_theme.dart';
 import '../constants/sizes.dart';
 import '../constants/animations.dart';
 import 'kit_bounce_scaler.dart';
@@ -44,7 +44,7 @@ class _ConfirmButtonState extends State<ConfirmButton> {
 
   @override
   Widget build(BuildContext context) {
-    final skin = Theme.of(context).extension<SkinExtension>();
+    final skin = Theme.of(context).extension<AppTheme>();
     final baseColor = skin?.medium ?? UiColors.grey500;
 
     // 确定背景色

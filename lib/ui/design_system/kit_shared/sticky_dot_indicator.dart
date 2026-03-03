@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import '../visual_skins/skin_extension.dart';
+﻿import 'package:flutter/material.dart';
+import '../theme/core/app_theme.dart';
 import '../constants/colors.dart';
 
 class StickyDotIndicator extends StatelessWidget {
@@ -17,7 +17,7 @@ class StickyDotIndicator extends StatelessWidget {
     // 采用多态查找，确保能匹配到 MaimaiSkin/ChunithmSkin 或插值中的 ThemeSkin
     final skin = Theme.of(
       context,
-    ).extensions.values.whereType<SkinExtension>().firstOrNull;
+    ).extensions.values.whereType<AppTheme>().firstOrNull;
     final Color activeColor = skin?.dotColor ?? UiColors.grey500;
     final Color inactiveColor = activeColor.withValues(alpha: 0.3);
 

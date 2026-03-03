@@ -1,6 +1,7 @@
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../application/shared/game_provider.dart';
 import '../../design_system/constants/colors.dart';
 import '../../design_system/constants/animations.dart';
 import '../../design_system/kit_shared/kit_staggered_entrance.dart';
@@ -10,8 +11,8 @@ import '../../design_system/kit_setting/setting_tile.dart';
 import 'categories/app_settings_page.dart';
 import 'categories/personalization_page.dart';
 import 'categories/sync_service_page.dart';
-import '../../design_system/visual_skins/implementations/defaut_skin/star_background.dart';
-import '../../design_system/visual_skins/skin_extension.dart';
+import '../../design_system/theme/core/app_theme.dart';
+import '../../design_system/theme/universal_theme/star_trails.dart';
 import 'categories/about_page.dart';
 
 /// 设置模块门面容器：Overriding Layer (v4.0)
@@ -33,6 +34,13 @@ class _SettingsPageState extends State<SettingsPage>
   int? _activeCategoryIndex;
   late AnimationController _expansionController;
   late Animation<double> _expansionAnimation;
+
+  // 即时图层变轨快照 (Layer Swap)
+  ui.Image? _currentSnapshot;
+  ui.Image? _oldSnapshot;
+  late AnimationController _swapController;
+  late Animation<double> _swapAnimation;
+  int _lastThemeHash = 0;
 
   final List<({IconData icon, String title, Color color, Widget page})>
   categories = [
@@ -83,6 +91,15 @@ class _SettingsPageState extends State<SettingsPage>
       curve: Curves.easeInOutQuart,
     );
 
+    _swapController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _swapAnimation = CurvedAnimation(
+      parent: _swapController,
+      curve: Curves.easeOutCubic,
+    );
+
     _fadeController.forward();
   }
 
@@ -90,23 +107,79 @@ class _SettingsPageState extends State<SettingsPage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _nav = context.read<NavigationProvider>();
+
+    // 取消此处对 _nav.bgSnapshot 盲目的吃入并缓存行为，
+    // 因为这会干扰真正的新摄制流程状态，只应当从顶栈快照获取一次或让隔离层自动处理。
+    if (_currentSnapshot == null && _nav.bgSnapshot != null) {
+      _currentSnapshot = _nav.bgSnapshot;
+    }
+
+    final gp = context.watch<GameProvider>();
+    final newHash = Object.hash(
+      gp.isThemeGlobal,
+      gp.activeSkinId,
+      gp.maiSkinId,
+      gp.chuSkinId,
+    );
+
+    if (_lastThemeHash == 0) {
+      _lastThemeHash = newHash;
+    } else if (_lastThemeHash != newHash) {
+      _lastThemeHash = newHash;
+      _triggerLayerSwap();
+    }
+  }
+
+  void _triggerLayerSwap() async {
+    // [时差修补] 延长 150ms 等待至 200ms
+    // 强制挂起快照捕捉，为了给予底层所有的 AnimatedContainer, AnimatedDefaultTextStyle
+    // 等隐式动画组件足够的 150ms-200ms 退场和渲染到全新颜色的时间，避免截取出带有旧色残影的断层假象。
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
+
+    final newImg = await _nav.captureTask?.call();
+    if (newImg != null && mounted) {
+      _nav.registerTempSnapshot(newImg);
+      setState(() {
+        _oldSnapshot = _currentSnapshot;
+        _currentSnapshot = newImg;
+      });
+      _swapController.forward(from: 0.0);
+    }
   }
 
   @override
   void dispose() {
     _fadeController.dispose();
     _expansionController.dispose();
+    _swapController.dispose();
     // 采用缓存引用清理背景快照，规避 context 停用异常 (Memory GC)
     _nav.clearBgSnapshot();
     super.dispose();
+  }
+
+  Widget _buildBlurEngine(ui.Image image) {
+    return RepaintBoundary(
+      child: ImageFiltered(
+        imageFilter: ui.ImageFilter.blur(
+          sigmaX: 15.0,
+          sigmaY: 15.0,
+          tileMode: TileMode.mirror,
+        ),
+        child: RawImage(
+          image: image,
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.low,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
     final skinExtension =
-        Theme.of(context).extension<SkinExtension>() ??
-        const StarBackgroundSkin();
+        Theme.of(context).extension<AppTheme>() ?? const StarTrailsTheme();
 
     return PopScope(
       canPop: false,
@@ -124,7 +197,6 @@ class _SettingsPageState extends State<SettingsPage>
               Positioned.fill(
                 child: Consumer<NavigationProvider>(
                   builder: (context, nav, _) {
-                    final snapshot = nav.bgSnapshot;
                     return GestureDetector(
                       onTap: () => _activeCategoryIndex == null
                           ? _handleBack()
@@ -133,27 +205,31 @@ class _SettingsPageState extends State<SettingsPage>
                         animation: _fadeAnimation,
                         builder: (context, _) => Opacity(
                           opacity: _fadeAnimation.value,
-                          child: snapshot != null
-                              ? RepaintBoundary(
-                                  child: ImageFiltered(
-                                    imageFilter: ImageFilter.blur(
-                                      sigmaX: 15.0, // 降低模糊半径，提升画面通透度
-                                      sigmaY: 15.0,
-                                      tileMode: TileMode.mirror,
-                                    ),
-                                    child: Transform.scale(
-                                      scale: 1.0, // 回滚放大动效
-                                      child: RawImage(
-                                        image: snapshot,
-                                        fit: BoxFit.cover,
-                                        filterQuality: FilterQuality.low,
-                                      ),
-                                    ),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // 1. 底层：新摄制的背景
+                              if (_currentSnapshot != null)
+                                _buildBlurEngine(_currentSnapshot!),
+
+                              // 2. 表层：被淘汰的老背景，正在做 FadeOut (1 -> 0)
+                              if (_oldSnapshot != null)
+                                AnimatedBuilder(
+                                  animation: _swapAnimation,
+                                  builder: (context, _) => Opacity(
+                                    opacity: 1.0 - _swapAnimation.value,
+                                    child: _buildBlurEngine(_oldSnapshot!),
                                   ),
-                                )
-                              : Container(
+                                ),
+
+                              // 3. Fallback 或者垫底灰度
+                              if (_currentSnapshot == null &&
+                                  _oldSnapshot == null)
+                                Container(
                                   color: UiColors.white.withValues(alpha: 0.25),
                                 ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -296,8 +372,7 @@ class _SettingsPageState extends State<SettingsPage>
 
     final cat = categories[_activeCategoryIndex!];
     final skin =
-        Theme.of(context).extension<SkinExtension>() ??
-        const StarBackgroundSkin();
+        Theme.of(context).extension<AppTheme>() ?? const StarTrailsTheme();
 
     return Theme(
       key: ValueKey('themed_page_${_activeCategoryIndex}'),
