@@ -37,7 +37,7 @@ lib/
 │       └── ...                # 结构同上
 │
 └── ui/                        # 表现层 (Presentation Layer)
-    ├── design_system/         # 原子级设计系统 (Kit & Skins)
+    ├── theme/                 # 原子级设计系统 (Kit & Skins)
     └── pages/                 # 业务功能页面组装 (Assembly)
 ```
 
