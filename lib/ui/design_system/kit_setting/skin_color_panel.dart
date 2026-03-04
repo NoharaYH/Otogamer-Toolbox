@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import '../../../application/shared/game_provider.dart';
 import '../constants/colors.dart';
 import '../constants/assets.dart';
+import '../constants/sizes.dart';
 import '../theme/core/app_theme.dart';
+import '../kit_shared/confirm_button.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 调色目标键（3通道：基础色 / 亮色 / 文字色）
@@ -212,8 +214,10 @@ class _SkinColorPanelState extends State<SkinColorPanel> {
       onTapDown: (_) => _onInteract(),
       behavior: HitTestBehavior.translucent,
       child: Padding(
-        // [ANIMATION_FAULT §2] 统一使用 sizes.dart 规范间距
-        padding: const EdgeInsets.only(top: 4, bottom: 16, left: 4, right: 4),
+        padding: const EdgeInsets.only(
+          top: UiSizes.atomicComponentGap,
+          bottom: 0,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,11 +229,13 @@ class _SkinColorPanelState extends State<SkinColorPanel> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _MiniPreview(
-                    skin: widget.skin,
-                    localColors: Map.unmodifiable(_localColors),
+                  Expanded(
+                    child: _MiniPreview(
+                      skin: widget.skin,
+                      localColors: Map.unmodifiable(_localColors),
+                    ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: UiSizes.spaceS),
                   Expanded(
                     child: _HslControl(
                       hue: _hue,
@@ -250,7 +256,7 @@ class _SkinColorPanelState extends State<SkinColorPanel> {
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: UiSizes.spaceS),
 
             // ── 底部：圆角矩形游标选择器（3个）
             _ColorTargetRow(
@@ -299,204 +305,321 @@ class _MiniPreview extends StatelessWidget {
     }
   }
 
+  String get _logoSubtitle => 'ColorTestText';
+
   @override
   Widget build(BuildContext context) {
     final basic = localColors['basic'] ?? Colors.grey;
     final light = localColors['light'] ?? Colors.grey.shade300;
     final dark = localColors['dark'] ?? Colors.grey.shade700;
     final logoAsset = _logoAsset;
+    final logoSubtitle = _logoSubtitle;
 
-    // [HIGH_FI_SNAPSHOT] 宽度扩张 50%：88 → 132
-    return SizedBox(
-      width: 132,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // ── 底层：skin.buildBackground 用渐变仿制（孤立堆栈规范）
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color.lerp(light, basic, 0.3)!,
-                          Color.lerp(basic, dark, 0.6)!,
-                        ],
-                      ),
-                    ),
-                  ),
+    final dynamicSkin = skin.copyWith(basic: basic, light: light, dark: dark);
 
-                  // ── 玻璃层：真实 BackdropFilter + 浅白蒙版
-                  BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    child: Container(
-                      color: Colors.white.withValues(alpha: 0.15),
-                    ),
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Theme(
+              data: Theme.of(context).copyWith(extensions: [dynamicSkin]),
+              child: Builder(
+                builder: (context) {
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // ── 物理一致性层：背景与 PageShell 玻璃层共同受控缩放
+                      SizedBox.expand(
+                        child: FittedBox(
+                          fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
+                          clipBehavior: Clip.hardEdge,
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width,
+                            height: MediaQuery.of(context).size.height,
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                // 1. 真实背景
+                                dynamicSkin.buildBackground(context),
 
-                  // ── 内容
-                  Padding(
-                    padding: const EdgeInsets.all(9),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // ── 顶部：Logo 区 + 右侧 Header 按钮
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Logo + 副文字 + 指示点
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (logoAsset != null)
-                                    Image.asset(
-                                      logoAsset,
-                                      height: 22,
-                                      fit: BoxFit.fitHeight,
-                                    )
-                                  else
-                                    Container(
-                                      height: 22,
-                                      width: 52,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.35,
+                                // 2. 真实架构的玻璃板（零偏移计算，完全同步 PageShell）
+                                Positioned(
+                                  top: UiSizes.getTopMarginWithSafeArea(
+                                    context,
+                                  ),
+                                  left:
+                                      UiSizes.getHorizontalMargin(context) + 12,
+                                  right:
+                                      UiSizes.getHorizontalMargin(context) + 12,
+                                  bottom: 0,
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(28.0),
+                                      topRight: Radius.circular(28.0),
+                                      // 修复底边缘直角：确保玻璃层底部也服从卡片圆角
+                                      bottomLeft: Radius.circular(12.0),
+                                      bottomRight: Radius.circular(12.0),
+                                    ),
+                                    child: BackdropFilter(
+                                      filter: ImageFilter.blur(
+                                        sigmaX: 12,
+                                        sigmaY: 12,
+                                      ),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.25,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            width: 0.5,
+                                          ),
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(28.0),
+                                            topRight: Radius.circular(28.0),
+                                            bottomLeft: Radius.circular(12.0),
+                                            bottomRight: Radius.circular(12.0),
+                                          ),
                                         ),
-                                        borderRadius: BorderRadius.circular(4),
                                       ),
                                     ),
-                                  const SizedBox(height: 4),
-                                  // light 半透副文本
-                                  Container(
-                                    width: 38,
-                                    height: 3.5,
-                                    decoration: BoxDecoration(
-                                      color: light.withValues(alpha: 0.75),
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
                                   ),
-                                  const SizedBox(height: 5),
-                                  // 两颗轮播指示点
-                                  Row(
+                                ),
+
+                                // 3. 真实架构的内容层（Logo + 指示器 + 按钮）
+                                Positioned.fill(
+                                  child: Stack(
                                     children: [
-                                      _Dot(color: basic, active: true),
-                                      const SizedBox(width: 3),
-                                      _Dot(
-                                        color: basic.withValues(alpha: 0.3),
-                                        active: false,
+                                      // 顶部 Logo 区
+                                      // 顶部 Logo 区（水印文字 + Logo 图层分离，对应 ScoreSyncLogoWrapper 实装）
+                                      Positioned(
+                                        top: UiSizes.getTopMarginWithSafeArea(
+                                          context,
+                                        ),
+                                        left: 0,
+                                        right: 0,
+                                        child: SizedBox(
+                                          height: UiSizes.logoAreaHeight,
+                                          child: Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              // 水印文字（Logo 背后，alpha 0.2 亮色）
+                                              Positioned(
+                                                top: UiSizes.spaceXL,
+                                                child: Text(
+                                                  logoSubtitle,
+                                                  style: TextStyle(
+                                                    fontFamily: 'GameFont',
+                                                    fontSize: 34,
+                                                    fontWeight:
+                                                        FontWeight.normal,
+                                                    color: dynamicSkin.light
+                                                        .withValues(alpha: 0.2),
+                                                    letterSpacing: -1.0,
+                                                  ),
+                                                ),
+                                              ),
+                                              // Logo 图像居中浮于上方
+                                              Align(
+                                                alignment: Alignment.center,
+                                                child: logoAsset != null
+                                                    ? Image.asset(
+                                                        logoAsset,
+                                                        height:
+                                                            UiSizes.logoHeight,
+                                                        fit: BoxFit.fitHeight,
+                                                      )
+                                                    : Container(
+                                                        height:
+                                                            UiSizes.logoHeight,
+                                                        width: 200,
+                                                        decoration: BoxDecoration(
+                                                          color: Colors.white
+                                                              .withValues(
+                                                                alpha: 0.35,
+                                                              ),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
+                                                      ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+
+                                      // 页面轮播指示器
+                                      Positioned(
+                                        top: UiSizes.getDotIndicatorTop(
+                                          context,
+                                        ),
+                                        left: 0,
+                                        right: 0,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            _Dot(
+                                              color: dynamicSkin.dotColor,
+                                              active: true,
+                                              size: 8,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            _Dot(
+                                              color: dynamicSkin.dotColor
+                                                  .withValues(alpha: 0.3),
+                                              active: false,
+                                              size: 8,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // 右上角操作按钮：完全对齐 root_page.dart 真实实装
+                                      Positioned(
+                                        top:
+                                            UiSizes.getTopMarginWithSafeArea(
+                                              context,
+                                            ) +
+                                            12.0,
+                                        right:
+                                            UiSizes.getHorizontalMargin(
+                                              context,
+                                            ) +
+                                            24.0,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            // 设置按钮（左）
+                                            _PreviewActionCircle(
+                                              icon: Icons.settings,
+                                              color: basic,
+                                            ),
+                                            const SizedBox(
+                                              width: UiSizes.spaceS,
+                                            ),
+                                            // 侧边栏按钮（右）
+                                            _PreviewActionCircle(
+                                              icon: Icons.menu_open,
+                                              color: basic,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // 内容区白卡：定位在 Logo 区正下方的可见区域
+                                      Positioned(
+                                        top:
+                                            UiSizes.getTopMarginWithSafeArea(
+                                              context,
+                                            ) +
+                                            UiSizes.logoAreaHeight +
+                                            UiSizes.atomicComponentGap,
+                                        // 左右增加额外 12.0 边距以区别于下方的玻璃层
+                                        left:
+                                            UiSizes.getHorizontalMargin(
+                                              context,
+                                            ) +
+                                            UiSizes.spaceS +
+                                            12.0,
+                                        right:
+                                            UiSizes.getHorizontalMargin(
+                                              context,
+                                            ) +
+                                            UiSizes.spaceS +
+                                            12.0,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius: BorderRadius.circular(
+                                              UiSizes.cardRadius,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.1,
+                                                ),
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ],
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal:
+                                                UiSizes.cardContentPadding,
+                                            vertical:
+                                                UiSizes.atomicComponentGap +
+                                                8.0, // 增加垂直高度
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            children: [
+                                              // 上方：文字色绑定 dark
+                                              Text(
+                                                '颜色测试',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: dark,
+                                                ),
+                                              ),
+                                              const SizedBox(
+                                                height:
+                                                    UiSizes.atomicComponentGap +
+                                                    12.0,
+                                              ), // 增加间距以提升高度
+                                              // 下方：两个标准按钮，basic 通过 Theme 自动注入
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: ConfirmButton(
+                                                      text: '确认',
+                                                      state: ConfirmButtonState
+                                                          .ready,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(
+                                                    width: UiSizes
+                                                        .atomicComponentGap,
+                                                  ),
+                                                  Expanded(
+                                                    child: ConfirmButton(
+                                                      text: '取消',
+                                                      state: ConfirmButtonState
+                                                          .disabled,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            // Gear + Menu（basic 着色）
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.settings_outlined,
-                                  size: 11,
-                                  color: basic,
-                                ),
-                                const SizedBox(height: 4),
-                                Icon(
-                                  Icons.menu_rounded,
-                                  size: 11,
-                                  color: basic,
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-
-                        const Spacer(),
-
-                        // ── 悬底：大体积白色卡片
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.93),
-                            borderRadius: BorderRadius.circular(7),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.08),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // dark 标识文字
-                              Text(
-                                '示范文字',
-                                style: TextStyle(
-                                  fontSize: 6.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: dark,
-                                  height: 1.0,
-                                ),
-                              ),
-                              const SizedBox(height: 5),
-                              // basic 实心圆角按钮
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: basic,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  '示范文字',
-                                  style: TextStyle(
-                                    fontSize: 5.5,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                    height: 1.0,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            skin.themeTitle,
-            style: const TextStyle(
-              fontSize: 10,
-              color: UiColors.grey500,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -505,10 +628,18 @@ class _MiniPreview extends StatelessWidget {
 class _Dot extends StatelessWidget {
   final Color color;
   final bool active;
-  const _Dot({required this.color, required this.active});
+  final double? size;
+  const _Dot({required this.color, required this.active, this.size});
 
   @override
   Widget build(BuildContext context) {
+    if (size != null) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      );
+    }
     return Container(
       width: active ? 10 : 4,
       height: 3,
@@ -516,6 +647,34 @@ class _Dot extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(2),
       ),
+    );
+  }
+}
+
+// 预览专用圆形操作按钮（对齐 KitActionCircle 视觉规格，无交互）
+class _PreviewActionCircle extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  const _PreviewActionCircle({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 32.0,
+      height: 32.0,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.2),
+            blurRadius: 6.0,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Icon(icon, color: color, size: 20),
     );
   }
 }
@@ -694,8 +853,8 @@ class _HslTrack extends StatelessWidget {
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
               trackShape: _GradientTrackShape(gradient: trackGradient),
-              activeTrackColor: Colors.transparent,
-              inactiveTrackColor: Colors.transparent,
+              activeTrackColor: Colors.white,
+              inactiveTrackColor: Colors.white,
               thumbColor: thumbColor,
               overlayColor: thumbColor.withValues(alpha: 0.18),
             ),
