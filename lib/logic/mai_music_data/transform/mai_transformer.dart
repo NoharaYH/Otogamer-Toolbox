@@ -81,6 +81,8 @@ class MaiTransformer {
           versionText: dfSong['basic_info']['from'],
           versionId: lxSong['version'] as int, // 来自落雪，整型精确版本号
           chartsJson: encodeCharts(chartRows), // 谱面集合 → JSON 字符串列
+          // 宴曲协演谱：isUtage 且有 2 张谱面（1P + 2P）时为 true
+          isBuddy: isUtage && chartRows.length > 1,
         ),
       );
     }

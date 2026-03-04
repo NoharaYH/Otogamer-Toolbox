@@ -16,6 +16,8 @@ class MaiSongRow {
   final String versionText; // 版本名称文字 (如 "舞萌DX 2024")
   final int versionId; // 版本数字 ID (来自落雪，如 24000)
   final String chartsJson; // List<MaiChartRow> 的 JSON 序列化字符串
+  // 宴曲专属：是否为双人协演谱（含 2P 谱面）。普通曲恒为 false
+  final bool isBuddy;
 
   const MaiSongRow({
     required this.id,
@@ -27,6 +29,7 @@ class MaiSongRow {
     required this.versionText,
     required this.versionId,
     required this.chartsJson,
+    this.isBuddy = false,
   });
 
   Map<String, dynamic> toMap() => {
@@ -39,6 +42,7 @@ class MaiSongRow {
     'version_text': versionText,
     'version_id': versionId,
     'charts_json': chartsJson,
+    'is_buddy': isBuddy ? 1 : 0, // SQLite 无原生 bool，用整型 0/1 表示
   };
 }
 
