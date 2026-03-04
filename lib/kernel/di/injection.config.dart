@@ -18,6 +18,8 @@ import '../../application/transfer/transfer_provider.dart' as _i1034;
 import '../services/api_service.dart' as _i137;
 import '../services/storage_service.dart' as _i306;
 import '../state/transfer_provider.dart' as _i792;
+import '../storage/sql/app_database.dart' as _i903;
+import '../storage/sql/daos/mai_music_dao.dart' as _i80;
 import 'register_module.dart' as _i291;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -31,6 +33,10 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i361.Dio>(() => registerModule.dio);
     gh.lazySingleton<_i558.FlutterSecureStorage>(
       () => registerModule.secureStorage,
+    );
+    gh.lazySingleton<_i903.AppDatabase>(() => _i903.AppDatabase());
+    gh.lazySingleton<_i80.MaiMusicDao>(
+      () => _i80.MaiMusicDao(gh<_i903.AppDatabase>()),
     );
     gh.lazySingleton<_i306.StorageService>(
       () => _i306.StorageService(gh<_i558.FlutterSecureStorage>()),

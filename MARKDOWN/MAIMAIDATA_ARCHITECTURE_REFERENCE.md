@@ -399,4 +399,60 @@ class KitCoverImage extends StatelessWidget {
 
 - 通过顶层 `genre == '宴会場'` 字段在 SQLite 进行一次性过滤，无需解析 `chartsJson`。
 - 展示宴曲卡片时，ONLY 读取 `charts_json` 内的 `is_utage: true` 条目，不得将其混入普通难度选择列表。
-- `Utage 2P` 条目应当仅在"双人协演"模式 label 下显示，REJECT 与 1P 谱面并排显示在同一难度栏上。
+
+---
+
+## 8. SQLite 数据库结构定义 (DDL)
+
+基于前述的扁平化 row 结构，OTOKiT 采用物理隔离方案，将普通曲库与宴会场库分为两张表。
+
+### 8.1 `mai_music_data` (普通歌曲主表)
+
+对应：`genre != '宴会場'` 的所有曲目。
+
+```sql
+CREATE TABLE IF NOT EXISTS mai_music_data (
+    id           INTEGER  NOT NULL PRIMARY KEY,  -- 水鱼/落雪共同主键，用于封面 URL 拼接
+    title        TEXT     NOT NULL,
+    artist       TEXT     NOT NULL,
+    bpm          INTEGER  NOT NULL,
+    type         TEXT     NOT NULL,              -- 'SD' | 'DX'
+    genre        TEXT     NOT NULL,              -- 流派文字，用于流派筛选
+    version_text TEXT     NOT NULL,              -- 版本名称文字 (如 "maimai DX UNIVERSE")
+    version_id   INTEGER  NOT NULL,              -- 落雪版本数字 ID，用于版本区间排序
+    charts_json  TEXT     NOT NULL               -- JSON 数组，包含 1~5 条 MaiChartRow
+);
+
+-- 核心索引
+CREATE INDEX IF NOT EXISTS idx_mai_music_version  ON mai_music_data (version_id);
+CREATE INDEX IF NOT EXISTS idx_mai_music_genre    ON mai_music_data (genre);
+CREATE INDEX IF NOT EXISTS idx_mai_music_title    ON mai_music_data (title);
+```
+
+### 8.2 `mai_utage_data` (宴会场专项表)
+
+对应：`genre == '宴会場'` 的所有曲目。
+
+```sql
+CREATE TABLE IF NOT EXISTS mai_utage_data (
+    id           INTEGER  NOT NULL PRIMARY KEY,
+    title        TEXT     NOT NULL,
+    artist       TEXT     NOT NULL,
+    bpm          INTEGER  NOT NULL,
+    type         TEXT     NOT NULL,              -- 宴曲几乎全为 'SD'
+    version_text TEXT     NOT NULL,
+    version_id   INTEGER  NOT NULL,
+    is_buddy     INTEGER  NOT NULL DEFAULT 0,    -- 是否为双人协演谱: 0=否 1=是
+    charts_json  TEXT     NOT NULL               -- JSON 数组，包含 1~2 条 MaiChartRow
+);
+
+-- 核心索引
+CREATE INDEX IF NOT EXISTS idx_mai_utage_buddy    ON mai_utage_data (is_buddy);
+CREATE INDEX IF NOT EXISTS idx_mai_utage_title    ON mai_utage_data (title);
+```
+
+### 8.3 设计原则
+
+1.  **物理隔离**: 宴曲独立成表，确保主曲库查询逻辑不受其特殊结构（1P/2P 分层）的干扰。
+2.  **冗余消除**: `mai_utage_data` 表中完全剔除 `genre` 字段（恒为“宴会場”）。
+3.  **零关联 (Zero Join)**: 谱面信息采用 JSON 文本形式在主行中闭环存储。鉴于 OTOKiT 的单曲查询频次远高于跨曲目的谱面分布统计，此方案能显著降低检索时的 CPU 震荡与内存碎片。
