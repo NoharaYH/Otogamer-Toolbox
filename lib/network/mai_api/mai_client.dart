@@ -1,5 +1,5 @@
-import 'dart:convert';
-import 'dart:io';
+import 'package:dio/dio.dart';
+import '../../kernel/di/injection.dart';
 
 class MaiClient {
   static const String divingFishUrl =
@@ -9,44 +9,53 @@ class MaiClient {
   static const String lxnsMetadataUrl =
       'https://maimai.lxns.net/api/v0/maimai/version/list';
 
-  final HttpClient _client = HttpClient();
+  final Dio _dio = getIt<Dio>();
 
   /// 获取游戏版本元数据（用于指纹校验）
   Future<List<dynamic>> fetchVersions() async {
-    final request = await _client.getUrl(Uri.parse(lxnsMetadataUrl));
-    final response = await request.close();
+    final response = await _dio.get(lxnsMetadataUrl);
     if (response.statusCode != 200) {
-      throw HttpException('LXNS Version API error: ${response.statusCode}');
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        message: 'LXNS Version API error: ${response.statusCode}',
+      );
     }
-    final content = await response.transform(utf8.decoder).join();
-    final Map<String, dynamic> data = jsonDecode(content);
-    return data['data'] ?? [];
+    return response.data['data'] ?? [];
   }
 
   /// 获取水鱼原始数据
   Future<List<dynamic>> fetchDivingFishRaw() async {
-    final request = await _client.getUrl(Uri.parse(divingFishUrl));
-    final response = await request.close();
+    final response = await _dio.get(divingFishUrl);
     if (response.statusCode != 200) {
-      throw HttpException('Diving Fish API error: ${response.statusCode}');
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        message: 'Diving Fish API error: ${response.statusCode}',
+      );
     }
-    final content = await response.transform(utf8.decoder).join();
-    return jsonDecode(content);
+    return response.data;
   }
 
   /// 获取落雪原始数据
   Future<List<dynamic>> fetchLxnsRaw() async {
-    final request = await _client.getUrl(Uri.parse(lxnsUrl));
-    final response = await request.close();
+    final response = await _dio.get(lxnsUrl);
     if (response.statusCode != 200) {
-      throw HttpException('LXNS API error: ${response.statusCode}');
+      throw DioException(
+        requestOptions: response.requestOptions,
+        response: response,
+        message: 'LXNS API error: ${response.statusCode}',
+      );
     }
-    final content = await response.transform(utf8.decoder).join();
-    final Map<String, dynamic> data = jsonDecode(content);
-    return data['data'] ?? [];
+    // 落雪 API 的 /song/list 返回结构中曲目列表位于 data.songs
+    final dataNode = response.data['data'];
+    if (dataNode is Map) {
+      return dataNode['songs'] ?? [];
+    }
+    return [];
   }
 
   void dispose() {
-    _client.close();
+    // Dio instance managed by getIt doesn't need local dispose here
   }
 }

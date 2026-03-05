@@ -13,10 +13,6 @@ class MaiSyncHandler {
   bool get isSyncing => _isSyncing;
 
   /// 核心同步任务：包含指纹校验守门员逻辑
-  ///
-  /// - 返回值变更: List<MaiMusic>? → List<MaiSongRow>?
-  ///   调用方收到结果后应立即调用 DAO 将行数据批量写入 SQLite，不得持有在内存中。
-  /// - Transformer 被包裹在 [Isolate.run] 内运行，保证主线程零阻塞。
   Future<List<MaiSongRow>?> performSync({
     bool force = false,
     void Function(SyncPhase)? onPhaseChanged,
@@ -31,39 +27,56 @@ class MaiSyncHandler {
 
     try {
       // 1. 获取最新版本指纹 (使用落雪的 version/list 作为参考)
-      final versions = await client.fetchVersions();
-      final String latestFingerprint = versions.isNotEmpty
-          ? versions.last['id'].toString()
-          : 'unknown';
+      String latestFingerprint = 'unknown';
+      try {
+        final versions = await client.fetchVersions();
+        if (versions.isNotEmpty) {
+          latestFingerprint = versions.last['id'].toString();
+        }
+      } catch (e) {
+        // 指纹获取失败不中断同步，仅记录
+        print('MaiSyncHandler: Failed to fetch versions for fingerprint: $e');
+      }
 
       // 2. 导出本地指纹进行对比
-      if (!force) {
+      if (!force && latestFingerprint != 'unknown') {
         final localFingerprint = await storage.read(kMaiDataFingerprint);
         if (localFingerprint == latestFingerprint) {
           return null;
         }
       }
 
-      // 3. 指纹不一致或强制更新，并行拉取双端全量原始数据
-      final results = await Future.wait([
-        client.fetchDivingFishRaw(),
-        client.fetchLxnsRaw(),
-      ]);
+      // 3. 并行拉取双端原始数据，采用更稳健的异常处理
+      final List<dynamic> dfRaw;
+      final List<dynamic> lxRaw;
 
-      // 4. Transformer 全程在独立 Isolate 内运行，主线程无感知
+      try {
+        final List<dynamic> results = await Future.wait([
+          client.fetchDivingFishRaw().catchError((e) => throw '水鱼曲库拉取失败: $e'),
+          client.fetchLxnsRaw().catchError((e) => throw '落雪曲库拉取失败: $e'),
+        ]);
+        dfRaw = results[0];
+        lxRaw = results[1];
+      } catch (e) {
+        // 如果任何一个源失败，抛出带详细描述的异常
+        throw '同步中断: $e';
+      }
+
+      // 4. Transformer 全程在独立 Isolate 内运行
       onPhaseChanged?.call(SyncPhase.merging);
       final List<MaiSongRow> rows = await Isolate.run(() async {
         return await MaiTransformer.transform(
-          results[0],
-          results[1],
+          dfRaw,
+          lxRaw,
           onProgress: onProgress,
         );
       });
 
       // 5. 同步成功后，更新本地指纹
-      await storage.save(kMaiDataFingerprint, latestFingerprint);
+      if (latestFingerprint != 'unknown') {
+        await storage.save(kMaiDataFingerprint, latestFingerprint);
+      }
 
-      // 6. 返回扁平行列表，由调用方负责写入 SQLite
       return rows;
     } catch (e) {
       rethrow;

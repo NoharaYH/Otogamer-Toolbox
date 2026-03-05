@@ -12,16 +12,23 @@ class MaiTransformer {
     List<dynamic> lxRaw, {
     void Function(int current, int total)? onProgress,
   }) async {
-    // 落雪数据以 id 为主键建立 O(1) 查找索引
-    final Map<int, dynamic> lxMap = {
-      for (var song in lxRaw) song['id'] as int: song,
-    };
+    // 落雪数据以 id 为主键建立 O(1) 查找索引，增加容错处理
+    final Map<int, dynamic> lxMap = {};
+    for (var song in lxRaw) {
+      if (song is Map) {
+        final int? sid = int.tryParse(song['id']?.toString() ?? '');
+        if (sid != null) {
+          lxMap[sid] = song;
+        }
+      }
+    }
 
     final List<MaiSongRow> rows = [];
     final int totalCount = dfRaw.length;
 
     for (int i = 0; i < totalCount; i++) {
       final dfSong = dfRaw[i];
+      if (dfSong is! Map) continue;
 
       // 每处理 50 首曲目，主动出让一次主线程，防止阻塞 UI 动画渲染
       if (i % 50 == 0) {
@@ -29,41 +36,53 @@ class MaiTransformer {
         onProgress?.call(i, totalCount);
       }
 
-      final int id = int.tryParse(dfSong['id'].toString()) ?? 0;
+      final int id = int.tryParse(dfSong['id']?.toString() ?? '') ?? 0;
       final lxSong = lxMap[id];
 
-      // 双源均有记录方可合并，否则跳过
+      // 双源均有记录方可合并，否则跳过 (目前逻辑强依赖双端)
       if (lxSong == null) continue;
 
-      final List<dynamic> dfCharts = dfSong['charts'];
-      final List<dynamic> dfDs = dfSong['ds'];
-      final List<dynamic> dfLevels = dfSong['level'];
-      final String genre = dfSong['basic_info']['genre'] ?? '';
-      // 孴会场识别：宴曲的谱面不是难度分层而是玩家角色分层
+      final List<dynamic> dfCharts = dfSong['charts'] ?? [];
+      final List<dynamic> dfDs = dfSong['ds'] ?? [];
+      final List<dynamic> dfLevels = dfSong['level'] ?? [];
+      final Map<String, dynamic> basicInfo = dfSong['basic_info'] ?? {};
+      final String genre = basicInfo['genre'] ?? '';
+
+      // 宴会场识别：宴曲的谱面不是难度分层而是玩家角色分层
       final bool isUtage = genre == '宴会场';
 
       // 谱面集合转换为紧凑型 MaiChartRow 序列
       final List<MaiChartRow> chartRows = [];
       for (int j = 0; j < dfCharts.length; j++) {
         final dfChart = dfCharts[j];
-        final List<dynamic> notes = dfChart['notes'];
+        if (dfChart is! Map) continue;
+        final List<dynamic> notes = dfChart['notes'] ?? [];
+
+        // 防御性越界检查
+        final String levelLabel = isUtage
+            ? (j == 0 ? 'Utage' : 'Utage 2P')
+            : _getDifficultyLabel(j);
+        final String levelStr = j < dfLevels.length
+            ? dfLevels[j].toString()
+            : 'Unknown';
+        final double constantVal = j < dfDs.length
+            ? (dfDs[j] as num).toDouble()
+            : 0.0;
 
         chartRows.add(
           MaiChartRow(
             difficulty: j,
-            levelLabel: isUtage
-                ? (j == 0 ? 'Utage' : 'Utage 2P') // 宴曲专属标签：1P / 2P 脚色区分
-                : _getDifficultyLabel(j), // 普通谱面标签
-            level: dfLevels[j].toString(),
-            constant: (dfDs[j] as num).toDouble(),
+            levelLabel: levelLabel,
+            level: levelStr,
+            constant: constantVal,
             designer: dfChart['charter'] ?? '-',
-            notesTap: notes[0],
-            notesHold: notes[1],
-            notesSlide: notes[2],
-            notesTouch: notes.length > 3 ? notes[3] : 0,
+            notesTap: notes.isNotEmpty ? (notes[0] as int? ?? 0) : 0,
+            notesHold: notes.length > 1 ? (notes[1] as int? ?? 0) : 0,
+            notesSlide: notes.length > 2 ? (notes[2] as int? ?? 0) : 0,
+            notesTouch: notes.length > 3 ? (notes[3] as int? ?? 0) : 0,
             notesBreak: notes.length > 4
-                ? notes[4]
-                : (notes.length == 4 ? notes[3] : 0),
+                ? (notes[4] as int? ?? 0)
+                : (notes.length == 4 ? (notes[3] as int? ?? 0) : 0),
             notesTotal: _sumNotes(notes),
             isUtage: isUtage,
           ),
@@ -73,15 +92,14 @@ class MaiTransformer {
       rows.add(
         MaiSongRow(
           id: id,
-          title: dfSong['title'],
-          artist: dfSong['basic_info']['artist'],
-          bpm: dfSong['basic_info']['bpm'] as int,
+          title: dfSong['title'] ?? basicInfo['title'] ?? 'Unknown',
+          artist: basicInfo['artist'] ?? '-',
+          bpm: (basicInfo['bpm'] as num?)?.toInt() ?? 0,
           type: dfSong['type'] ?? '',
-          genre: dfSong['basic_info']['genre'],
-          versionText: dfSong['basic_info']['from'],
-          versionId: lxSong['version'] as int, // 来自落雪，整型精确版本号
-          chartsJson: encodeCharts(chartRows), // 谱面集合 → JSON 字符串列
-          // 宴曲协演谱：isUtage 且有 2 张谱面（1P + 2P）时为 true
+          genre: genre,
+          versionText: basicInfo['from'] ?? '-',
+          versionId: int.tryParse(lxSong['version']?.toString() ?? '') ?? 0,
+          chartsJson: encodeCharts(chartRows),
           isBuddy: isUtage && chartRows.length > 1,
         ),
       );
@@ -95,11 +113,11 @@ class MaiTransformer {
 
   static String _getDifficultyLabel(int index) {
     const labels = ['Basic', 'Advanced', 'Expert', 'Master', 'Re:Master'];
-    if (index < labels.length) return labels[index];
+    if (index >= 0 && index < labels.length) return labels[index];
     return 'Unknown';
   }
 
   static int _sumNotes(List<dynamic> notes) {
-    return notes.fold(0, (sum, item) => sum + (item as int));
+    return notes.fold(0, (sum, item) => sum + (item is int ? item : 0));
   }
 }
