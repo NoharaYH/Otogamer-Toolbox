@@ -1,8 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../application/shared/game_provider.dart';
-import '../../../application/shared/navigation_provider.dart';
 import '../../design_system/kit_shared/game_page_item.dart';
 import '../../design_system/kit_shared/kit_game_carousel.dart';
 import '../../design_system/theme/theme_catalog.dart';
@@ -22,7 +21,6 @@ class ScoreSyncPage extends StatefulWidget {
 
 class _ScoreSyncPageState extends State<ScoreSyncPage> {
   late final PageController _localController;
-  bool _initialized = false;
 
   // 按 gameIndex 缓存游戏内配置（防止切换页面时重置）
   // transferMode: 0=水鱼, 1=双平台, 2=落雪
@@ -36,23 +34,10 @@ class _ScoreSyncPageState extends State<ScoreSyncPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        gameProvider.pageValueNotifier.value = _localController.initialPage
-            .toDouble();
+        gameProvider.pageValueNotifier.value =
+            _localController.initialPage.toDouble();
       }
     });
-
-    if (!_initialized) {
-      _initialized = true;
-      gameProvider.init().then((initialTag) {
-        if (mounted) {
-          // 将解析出的目标大页面 Tag 静默注入 NavigationProvider
-          context.read<NavigationProvider>().setInitialTag(initialTag);
-          if (_localController.hasClients) {
-            _localController.jumpToPage(gameProvider.currentIndex);
-          }
-        }
-      });
-    }
 
     _localController.addListener(() {
       if (_localController.hasClients && _localController.page != null) {

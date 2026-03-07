@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'kernel/di/injection.dart';
 import 'ui/pages/root_page.dart';
+import 'application/bootstrap/startup_bootstrap.dart';
+import 'application/coordinators/root_theme_scope.dart';
 import 'application/shared/navigation_provider.dart';
 import 'application/shared/game_provider.dart';
 import 'application/transfer/transfer_provider.dart';
@@ -42,7 +44,11 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const ToastOverlay(child: RootPage()),
+      home: const StartupBootstrap(
+        child: RootThemeScope(
+          child: ToastOverlay(child: RootPage()),
+        ),
+      ),
     );
   }
 }
