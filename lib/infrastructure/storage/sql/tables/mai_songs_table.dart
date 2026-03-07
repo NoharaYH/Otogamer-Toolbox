@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 
-/// 普通曲表（仅 basic info + charts）
 @DataClassName('MaiMusicTableData')
 class MaiMusicTable extends Table {
   @override
@@ -20,7 +19,6 @@ class MaiMusicTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// 宴谱表（仅 basic info + utage_info + utage_charts，无 isBuddy）
 @DataClassName('MaiUtageTableData')
 class MaiUtageTable extends Table {
   @override

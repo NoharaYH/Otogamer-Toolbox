@@ -52,6 +52,12 @@ class ProdEnv implements AppEnv {
   String get wahlapAuthBaseUrl => Endpoints.wahlapAuthBaseUrl;
 
   @override
+  String get ossNormalMusicUrl => Endpoints.ossNormalMusicUrl;
+
+  @override
+  String get ossUtageMusicUrl => Endpoints.ossUtageMusicUrl;
+
+  @override
   TransferGameConfig getTransferConfig(int gameType) {
     if (gameType == 1) {
       return TransferGameConfig(

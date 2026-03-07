@@ -16,4 +16,8 @@ class Endpoints {
   // Wahlap Auth (微信授权基础地址)
   static const String wahlapAuthBaseUrl =
       "https://tgk-wcaime.wahlap.com/wc_auth/oauth/authorize/";
+
+  /// OSS 曲库 JSON（实际 URL 可放在 test/sql/secrets/oss_urls.json 等，此处占位）
+  static const String ossNormalMusicUrl = '';
+  static const String ossUtageMusicUrl = '';
 }

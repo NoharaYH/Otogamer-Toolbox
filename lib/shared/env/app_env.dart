@@ -17,6 +17,10 @@ abstract class AppEnv {
   String get divingFishBaseUrl;
   String get wahlapAuthBaseUrl;
 
+  /// OSS 曲库 JSON 地址（未配置时返回空字符串，OssApiClient 将返回 failure）
+  String get ossNormalMusicUrl;
+  String get ossUtageMusicUrl;
+
   /// gameType: 0 = maimai, 1 = chunithm
   TransferGameConfig getTransferConfig(int gameType);
 }

@@ -1,11 +1,13 @@
 import 'dart:convert';
-import '../../../kernel/storage/sql/app_database.dart';
-import '../data_formats/mai_music.dart';
 
-/// Drift 表行 → 业务模型 MaiMusic。
-/// [fromTable] 普通曲表，[fromUtageTable] 宴谱表。
-class MaiDbMapper {
-  static MaiMusic fromTable(MaiMusicTableData table) {
+import '../../../../domain/entities/mai_music.dart';
+import '../app_database.dart';
+
+/// Drift 表行 → 领域实体 MaiMusic。Drift 类型仅在此引用。
+class MusicRowMapper {
+  MusicRowMapper._();
+
+  static MaiMusic fromNormalTable(MaiMusicTableData table) {
     return MaiMusic(
       basicInfo: MaiBasicInfo(
         id: table.id,

@@ -3,18 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 
-import '../../kernel/storage/sql/daos/mai_music_dao.dart';
-import '../../logic/mai_music_data/data_formats/mai_music.dart';
+import '../../domain/entities/mai_music.dart';
+import '../../domain/repositories/music_library_repository.dart';
+import '../../infrastructure/storage/sql/daos/mai_music_dao.dart';
+import '../../infrastructure/storage/sql/mappers/music_row_mapper.dart';
 import '../../logic/mai_music_data/data_sync/mai_oss_sync_handler.dart';
-import '../../logic/mai_music_data/transform/mai_db_mapper.dart';
 import '../shared/toast_provider.dart';
 
 @injectable
 class MaiMusicProvider extends ChangeNotifier {
-  MaiMusicProvider(this._maiMusicDao, this._syncHandler, this._toastProvider);
+  MaiMusicProvider(this._maiMusicDao, this._musicLibraryRepo, this._toastProvider);
 
   final MaiMusicDao _maiMusicDao;
-  final MaiOssSyncHandler _syncHandler;
+  final MusicLibraryRepository _musicLibraryRepo;
   final ToastProvider _toastProvider;
 
   StreamSubscription? _musicSubscription;
@@ -58,12 +59,12 @@ class MaiMusicProvider extends ChangeNotifier {
     notifyListeners();
 
     _musicSubscription = _maiMusicDao.watchSongs().listen((rows) {
-      _musics = rows.map((r) => MaiDbMapper.fromTable(r)).toList();
+      _musics = rows.map((r) => MusicRowMapper.fromNormalTable(r)).toList();
       _checkInitialized();
     });
 
     _utageSubscription = _maiMusicDao.watchUtageSongs().listen((rows) {
-      _utageMusics = rows.map((r) => MaiDbMapper.fromUtageTable(r)).toList();
+      _utageMusics = rows.map((r) => MusicRowMapper.fromUtageTable(r)).toList();
       _checkInitialized();
     });
   }
@@ -74,42 +75,23 @@ class MaiMusicProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 从 OSS 拉取两个 JSON 并分别写入两表
+  /// 从 OSS 拉取两个 JSON 并分别写入两表（经 MusicLibraryRepository）
   Future<void> sync() async {
     if (_isLoading) return;
     _isLoading = true;
+    _syncPhase = SyncPhase.pulling;
     notifyListeners();
 
     try {
-      final result = await _syncHandler.performSync(
-        onPhaseChanged: (phase) {
-          _syncPhase = phase;
-          notifyListeners();
-        },
-      );
-
-      if (result != null) {
-        int normalCount = 0;
-        int utageCount = 0;
-        if (result.normal != null && result.normal!.isNotEmpty) {
-          await _maiMusicDao.batchInsertNormal(result.normal!);
-          normalCount = result.normal!.length;
-        }
-        if (result.utage != null && result.utage!.isNotEmpty) {
-          await _maiMusicDao.batchInsertUtage(result.utage!);
-          utageCount = result.utage!.length;
-        }
-        if (normalCount > 0 || utageCount > 0) {
-          final parts = <String>[];
-          if (normalCount > 0) parts.add('普通 $normalCount 首');
-          if (utageCount > 0) parts.add('宴谱 $utageCount 首');
-          _toastProvider.show(
-            "曲库同步成功 (${parts.join('，')})",
-            ToastType.confirmed,
-          );
-        } else {
-          _toastProvider.show("曲库已是最新", ToastType.confirmed);
-        }
+      final result = await _musicLibraryRepo.syncFromOss();
+      if (result.normalCount > 0 || result.utageCount > 0) {
+        final parts = <String>[];
+        if (result.normalCount > 0) parts.add('普通 ${result.normalCount} 首');
+        if (result.utageCount > 0) parts.add('宴谱 ${result.utageCount} 首');
+        _toastProvider.show(
+          "曲库同步成功 (${parts.join('，')})",
+          ToastType.confirmed,
+        );
       } else {
         _toastProvider.show("曲库已是最新", ToastType.confirmed);
       }

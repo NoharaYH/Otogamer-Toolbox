@@ -17,8 +17,8 @@ import '../../domain/repositories/vpn_repository.dart';
 import '../../domain/services/html_record_parser.dart';
 import '../../domain/value_objects/game_type.dart';
 import '../../infrastructure/network/oauth/pkce_helper.dart';
+import '../../shared/constants/domain_constants.dart';
 import '../../shared/env/app_env.dart';
-import '../../ui/design_system/constants/strings.dart';
 
 /// TransferProvider：纯 UI 状态中转层。
 @injectable
@@ -101,7 +101,7 @@ class TransferProvider extends ChangeNotifier {
   void _onVpnStatus(VpnStatus status) {
     _isVpnRunning = status.isRunning;
     if (status.statusText != null) _successMessage = status.statusText;
-    if (status.isDone || status.statusText == UiStrings.syncFinish) {
+    if (status.isDone || status.statusText == DomainConstants.syncFinish) {
       _isTracking = false;
       _vpnRepo.stop();
     }
@@ -162,7 +162,7 @@ class TransferProvider extends ChangeNotifier {
             ..statusCode = 200
             ..headers.contentType = ContentType.html
             ..write(
-              '<meta charset="utf-8"><body><h2 style="text-align:center;margin-top:50px;">${UiStrings.oauthSuccess}！您可以关闭此网页并返回 ${UiStrings.appName}。</h2></body>',
+              '<meta charset="utf-8"><body><h2 style="text-align:center;margin-top:50px;">${DomainConstants.oauthSuccess}！您可以关闭此网页并返回 ${DomainConstants.appName}。</h2></body>',
             );
           await request.response.close();
           await server.close(force: true);
@@ -198,14 +198,14 @@ class TransferProvider extends ChangeNotifier {
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
-      _errorMessage = UiStrings.errOAuthNoLaunch;
+      _errorMessage = DomainConstants.errOAuthNoLaunch;
       notifyListeners();
     }
   }
 
   Future<void> _handleLxnsOAuth(String code, {int gameType = 0}) async {
     if (_pkceVerifier == null) {
-      _errorMessage = UiStrings.errOAuthNoVerifier;
+      _errorMessage = DomainConstants.errOAuthNoVerifier;
       notifyListeners();
       return;
     }
@@ -223,10 +223,10 @@ class TransferProvider extends ChangeNotifier {
           _isLxnsOAuthDone = true;
           _isLxnsVerified = true;
           _pkceVerifier = null;
-          _successMessage = UiStrings.oauthSuccess;
+          _successMessage = DomainConstants.oauthSuccess;
         },
         (e) {
-          _errorMessage = UiStrings.oauthExchangeFailed;
+          _errorMessage = DomainConstants.oauthExchangeFailed;
         },
       );
     } catch (e) {
@@ -255,16 +255,16 @@ class TransferProvider extends ChangeNotifier {
           final records = _htmlParser.parse(html);
           if (records.isNotEmpty) {
             final result = await _transferRepo.uploadMaimaiRecords(token, records);
-            final label = (diff == 10) ? UiStrings.diffLabelUtage : "难度$diff";
+            final label = (diff == 10) ? DomainConstants.diffLabelUtage : "难度$diff";
             result.fold(
               (_) {
                 appendLog(
-                  "${UiStrings.logTagUpload} ${UiStrings.logUploadSuccess.replaceAll("{0}", UiStrings.modeDivingFish).replaceAll("{1}", label)}",
+                  "${DomainConstants.logTagUpload} ${DomainConstants.logUploadSuccess.replaceAll("{0}", DomainConstants.modeDivingFish).replaceAll("{1}", label)}",
                 );
               },
               (e) {
                 appendLog(
-                  "${UiStrings.logTagError} ${UiStrings.logErrUpload.replaceAll("{0}", UiStrings.modeDivingFish).replaceAll("{1}", label).replaceAll("{2}", "400").replaceAll("{3}", e.message)}",
+                  "${DomainConstants.logTagError} ${DomainConstants.logErrUpload.replaceAll("{0}", DomainConstants.modeDivingFish).replaceAll("{1}", label).replaceAll("{2}", "400").replaceAll("{3}", e.message)}",
                 );
               },
             );
@@ -273,7 +273,7 @@ class TransferProvider extends ChangeNotifier {
           await _vpnRepo.notifyDivingFishTaskDone();
         }
       } catch (e) {
-        appendLog("${UiStrings.logTagError} ${UiStrings.logErrParse}: $e");
+        appendLog("${DomainConstants.logTagError} ${DomainConstants.logErrParse}: $e");
         await _vpnRepo.notifyDivingFishTaskDone();
       }
       return;
@@ -378,9 +378,9 @@ class TransferProvider extends ChangeNotifier {
       await launchUrl(wxUrl, mode: LaunchMode.externalApplication);
     }
 
-    appendLog("${UiStrings.logTagVpn} ${UiStrings.logVpnStarted}");
-    appendLog("${UiStrings.logTagClipboard} ${UiStrings.logClipReady}");
-    appendLog(UiStrings.logWaitLink);
+    appendLog("${DomainConstants.logTagVpn} ${DomainConstants.logVpnStarted}");
+    appendLog("${DomainConstants.logTagClipboard} ${DomainConstants.logClipReady}");
+    appendLog(DomainConstants.logWaitLink);
   }
 
   Future<bool> stopVpn({
@@ -388,7 +388,7 @@ class TransferProvider extends ChangeNotifier {
     bool isManually = false,
   }) async {
     if (isManually) {
-      appendLog("${UiStrings.logTagSystem} ${UiStrings.logSysTerminated}");
+      appendLog("${DomainConstants.logTagSystem} ${DomainConstants.logSysTerminated}");
     }
     await _vpnRepo.stop();
     if (resetState) {
@@ -426,8 +426,8 @@ class TransferProvider extends ChangeNotifier {
     _gameLogs[gameType] = "";
     notifyListeners();
 
-    appendLog("${UiStrings.logTagSystem} ${UiStrings.logSysStart}");
-    appendLog("${UiStrings.logTagVpn} ${UiStrings.logVpnStarting}");
+    appendLog("${DomainConstants.logTagSystem} ${DomainConstants.logSysStart}");
+    appendLog("${DomainConstants.logTagVpn} ${DomainConstants.logVpnStarting}");
 
     try {
       _pendingWechat = true;
@@ -439,7 +439,7 @@ class TransferProvider extends ChangeNotifier {
     } catch (e) {
       _pendingWechat = false;
       appendLog(
-        "${UiStrings.logTagError} ${UiStrings.logErrVpnStart.replaceAll("{0}", e.toString())}",
+        "${DomainConstants.logTagError} ${DomainConstants.logErrVpnStart.replaceAll("{0}", e.toString())}",
       );
     }
   }
@@ -527,13 +527,13 @@ class TransferProvider extends ChangeNotifier {
     final needsLxns = mode == 2 || mode == 1;
 
     if (needsDf && dfToken.isEmpty) {
-      _errorMessage = UiStrings.inputDivingFishToken;
+      _errorMessage = DomainConstants.inputDivingFishToken;
       _isLoading = false;
       notifyListeners();
       return false;
     }
     if (needsLxns && lxnsToken.isEmpty) {
-      _errorMessage = UiStrings.inputLxnsToken;
+      _errorMessage = DomainConstants.inputLxnsToken;
       _isLoading = false;
       notifyListeners();
       return false;
@@ -547,7 +547,7 @@ class TransferProvider extends ChangeNotifier {
       final r = await _authRepo.validateDivingFishToken(dfToken);
       if (r.isFailure) {
         _errorMessage =
-            "${UiStrings.modeDivingFish} ${UiStrings.logTagAuth} 验证失败";
+            "${DomainConstants.modeDivingFish} ${DomainConstants.logTagAuth} 验证失败";
         _isLoading = false;
         notifyListeners();
         return false;
@@ -557,7 +557,7 @@ class TransferProvider extends ChangeNotifier {
     if (needsLxns && !lxnsSuccess) {
       final r = await _authRepo.validateLxnsToken(lxnsToken, game);
       if (r.isFailure) {
-        _errorMessage = "${UiStrings.modeLxns} ${UiStrings.logTagAuth} 验证失败";
+        _errorMessage = "${DomainConstants.modeLxns} ${DomainConstants.logTagAuth} 验证失败";
         _isLoading = false;
         notifyListeners();
         return false;
@@ -574,7 +574,7 @@ class TransferProvider extends ChangeNotifier {
       lxnsRefreshToken: lxnsRefreshToken,
     ));
 
-    _successMessage = UiStrings.verifySuccess;
+    _successMessage = DomainConstants.verifySuccess;
     _isLoading = false;
     notifyListeners();
     return true;

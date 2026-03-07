@@ -1,11 +1,13 @@
 import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 import 'package:injectable/injectable.dart';
-import 'tables/mai_songs_table.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+
 import 'daos/mai_music_dao.dart';
+import 'tables/mai_songs_table.dart';
 
 part 'app_database.g.dart';
 
@@ -14,7 +16,6 @@ part 'app_database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
-  /// 测试用：传入 executor（如 NativeDatabase.memory()）以使用内存库。
   AppDatabase.forTest(QueryExecutor executor) : super(executor);
 
   @override
