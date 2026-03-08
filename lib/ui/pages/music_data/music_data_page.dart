@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../application/mai/mai_music_provider.dart';
@@ -31,13 +31,12 @@ class _MusicDataPageState extends State<MusicDataPage> {
   void initState() {
     super.initState();
     final gameProvider = context.read<GameProvider>();
-    // 初始化本地控制器，初始页码同步全局索引
     _localController = PageController(initialPage: gameProvider.currentIndex);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        gameProvider.pageValueNotifier.value = _localController.initialPage
-            .toDouble();
+        gameProvider.pageValueNotifier.value =
+            _localController.initialPage.toDouble();
       }
     });
 
@@ -47,14 +46,29 @@ class _MusicDataPageState extends State<MusicDataPage> {
       }
     });
 
+    gameProvider.addListener(_syncControllerToCurrentIndex);
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final provider = context.read<MaiMusicProvider>();
       await provider.init();
     });
   }
 
+  void _syncControllerToCurrentIndex() {
+    final gp = context.read<GameProvider>();
+    if (!mounted || !_localController.hasClients) return;
+    final p = _localController.page;
+    if (p == null) return;
+    final isStable = (p - p.round()).abs() < 0.01;
+    if (!isStable) return;
+    if (p.round() != gp.currentIndex) {
+      _localController.jumpToPage(gp.currentIndex);
+    }
+  }
+
   @override
   void dispose() {
+    context.read<GameProvider>().removeListener(_syncControllerToCurrentIndex);
     _localController.dispose();
     super.dispose();
   }

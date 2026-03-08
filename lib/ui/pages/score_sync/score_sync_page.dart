@@ -44,10 +44,27 @@ class _ScoreSyncPageState extends State<ScoreSyncPage> {
         gameProvider.pageValueNotifier.value = _localController.page!;
       }
     });
+
+    // init 异步完成后 currentIndex 可能已变，同步 PageController 以避免背景错位
+    gameProvider.addListener(_syncControllerToCurrentIndex);
+  }
+
+  void _syncControllerToCurrentIndex() {
+    final gp = context.read<GameProvider>();
+    if (!mounted || !_localController.hasClients) return;
+    final p = _localController.page;
+    if (p == null) return;
+    // 仅在页面稳定（非滑动中）时同步，避免打断用户滑动
+    final isStable = (p - p.round()).abs() < 0.01;
+    if (!isStable) return;
+    if (p.round() != gp.currentIndex) {
+      _localController.jumpToPage(gp.currentIndex);
+    }
   }
 
   @override
   void dispose() {
+    context.read<GameProvider>().removeListener(_syncControllerToCurrentIndex);
     _localController.dispose();
     super.dispose();
   }
