@@ -10,6 +10,7 @@ class VpnStartConfig {
     required this.wahlapAuthUrl,
     required this.genreList,
     required this.fetchUrlMap,
+    this.fetchPostUrlMap,
     required this.gameTypeIndex,
     required this.difficulties,
   });
@@ -22,6 +23,8 @@ class VpnStartConfig {
   final String wahlapAuthUrl;
   final List<String> genreList;
   final Map<int, String> fetchUrlMap;
+  /// 中二 diff 0-4 需先 POST 再 GET，key=diff，value=POST URL
+  final Map<int, String>? fetchPostUrlMap;
   /// 0 = maimai, 1 = chunithm
   final int? gameTypeIndex;
   final List<int> difficulties;

@@ -11,6 +11,7 @@ class VpnStartPayload {
     required this.wahlapAuthUrl,
     required this.genreList,
     required this.fetchUrlMap,
+    this.fetchPostUrlMap,
     required this.gameTypeIndex,
     required this.difficulties,
   });
@@ -23,6 +24,7 @@ class VpnStartPayload {
   final String wahlapAuthUrl;
   final List<String> genreList;
   final Map<int, String> fetchUrlMap;
+  final Map<int, String>? fetchPostUrlMap;
   final int? gameTypeIndex;
   final List<int> difficulties;
 
@@ -36,6 +38,7 @@ class VpnStartPayload {
       wahlapAuthUrl: config.wahlapAuthUrl,
       genreList: config.genreList,
       fetchUrlMap: config.fetchUrlMap,
+      fetchPostUrlMap: config.fetchPostUrlMap,
       gameTypeIndex: config.gameTypeIndex,
       difficulties: config.difficulties,
     );
@@ -51,6 +54,8 @@ class VpnStartPayload {
       'wahlapAuthUrl': wahlapAuthUrl,
       'genreList': genreList,
       'fetchUrlMap': fetchUrlMap.map((k, v) => MapEntry(k.toString(), v)),
+      if (fetchPostUrlMap != null && fetchPostUrlMap!.isNotEmpty)
+        'fetchPostUrlMap': fetchPostUrlMap!.map((k, v) => MapEntry(k.toString(), v)),
       'gameType': gameTypeIndex,
       'difficulties': difficulties,
     };

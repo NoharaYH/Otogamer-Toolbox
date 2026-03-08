@@ -33,12 +33,23 @@ class ChunithmModule implements GameModule {
   }) {
     final cfg = _env.getTransferConfig(1);
     final wahlapBase = cfg.wahlapBase;
-    // 中二不按 genre 细分，按 diff 直接拆分，结构对齐舞萌
+    // 中二各难度对应独立路径（对齐 maimaidx-prober）：basic、advanced、expert、master、ultima、worldsEndList
+    // diff 0-4 需先 POST 到 sendBasic/sendAdvanced 等（无尾斜杠）再 GET，否则返回空
+    const diffPaths = {0: 'basic', 1: 'advanced', 2: 'expert', 3: 'master', 4: 'ultima'};
+    const postPaths = {0: 'sendBasic', 1: 'sendAdvanced', 2: 'sendExpert', 3: 'sendMaster', 4: 'sendUltima'};
     final fetchUrlMap = <int, String>{
-      -1: '${wahlapBase}friend/userFriendCode/',
-      -2: '${wahlapBase}record/',
+      -1: '${wahlapBase}home/playerData/',
+      -2: '${wahlapBase}record/playlog/',
       for (final d in difficulties.values)
-        if (d >= 0) d: '${wahlapBase}record/musicSort/search/?search=V&sort=1&playCheck=on&diff=$d',
+        if (d >= 0)
+          d: (d == 10 || d == 5)
+              ? '${wahlapBase}record/worldsEndList/'
+              : '${wahlapBase}record/musicGenre/${diffPaths[d] ?? 'basic'}',
+    };
+    final fetchPostUrlMap = <int, String>{
+      for (final d in difficulties.values)
+        if (d >= 0 && d <= 4 && postPaths.containsKey(d))
+          d: '${wahlapBase}record/musicGenre/${postPaths[d]}',
     };
     return VpnStartConfig(
       dfToken: mode.needsDivingFish ? tokens.dfToken : '',
@@ -49,6 +60,7 @@ class ChunithmModule implements GameModule {
       wahlapAuthUrl: '${_env.wahlapAuthBaseUrl}${cfg.wahlapAuthLabel}',
       genreList: cfg.genreList,
       fetchUrlMap: fetchUrlMap,
+      fetchPostUrlMap: fetchPostUrlMap.isEmpty ? null : fetchPostUrlMap,
       gameTypeIndex: 1,
       difficulties: difficulties.values.toList(),
     );

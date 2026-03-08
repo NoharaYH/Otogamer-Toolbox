@@ -45,6 +45,14 @@ public class SimpleCookieJar implements CookieJar {
         }
     }
 
+    /** 获取指定 host 的 cookies，供 Chunithm POST 取 token 用（对齐 maimaidx-prober cookies[0].Value） */
+    public List<Cookie> getCookiesForHost(String host) {
+        synchronized (lock) {
+            List<Cookie> cookies = cookieStore.get(host);
+            return cookies != null ? cookies : new ArrayList<Cookie>();
+        }
+    }
+
     public void clearCookieStroe() {
         synchronized (lock) {
             this.cookieStore.clear();

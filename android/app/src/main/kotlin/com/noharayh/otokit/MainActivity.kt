@@ -22,6 +22,7 @@ class MainActivity : FlutterActivity(),
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        DataContext.AppContext = applicationContext
         methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
         methodChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
@@ -66,6 +67,19 @@ class MainActivity : FlutterActivity(),
                                 k is String && v is String -> k.toIntOrNull()?.let { DataContext.FetchUrlMap[it] = v }
                             }
                         }
+                    }
+                    val fetchPostUrls = call.argument<Map<*, *>>("fetchPostUrlMap")
+                    if (fetchPostUrls != null) {
+                        DataContext.FetchPostUrlMap.clear()
+                        fetchPostUrls.forEach { (k, v) ->
+                            if (v is String) when {
+                                k is Int -> DataContext.FetchPostUrlMap[k] = v
+                                k is Long -> DataContext.FetchPostUrlMap[k.toInt()] = v
+                                k is String -> k.toIntOrNull()?.let { DataContext.FetchPostUrlMap[it] = v }
+                            }
+                        }
+                    } else {
+                        DataContext.FetchPostUrlMap.clear()
                     }
 
                     startService(Intent(this, LocalVpnService::class.java))

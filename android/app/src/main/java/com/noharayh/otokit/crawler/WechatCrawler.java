@@ -6,9 +6,16 @@ import static com.noharayh.otokit.crawler.CrawlerCaller.onError;
 import static com.noharayh.otokit.crawler.CrawlerCaller.startAuth;
 import static com.noharayh.otokit.crawler.CrawlerCaller.writeLog;
 
+import android.os.Environment;
 import android.util.Log;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,7 +36,10 @@ import javax.net.ssl.X509TrustManager;
 
 import okhttp3.Call;
 import okhttp3.ConnectionSpec;
+import okhttp3.Cookie;
+import okhttp3.FormBody;
 import okhttp3.Headers;
+import okhttp3.HttpUrl;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -222,14 +232,64 @@ public class WechatCrawler {
         }
 
         String label = getDiffLabel(diff);
+        // 中二 diff 0-4 需先 POST 到 sendBasic/sendAdvanced 等（genre=99 & token），否则返回空（对齐 maimaidx-prober）
+        String postUrl = com.noharayh.otokit.DataContext.FetchPostUrlMap != null
+                ? com.noharayh.otokit.DataContext.FetchPostUrlMap.get(diff)
+                : null;
+        if (postUrl != null && !postUrl.isEmpty()) {
+            try {
+                HttpUrl parsed = HttpUrl.parse(postUrl);
+                String token = "";
+                if (parsed != null) {
+                    List<Cookie> cookies = jar.getCookiesForHost(parsed.host());
+                    if (!cookies.isEmpty()) {
+                        token = cookies.get(0).value(); // 对齐 maimaidx-prober cookies[0].Value
+                    }
+                }
+                FormBody formBody = new FormBody.Builder()
+                        .add("genre", "99")
+                        .add("token", token)
+                        .build();
+                Request postReq = new Request.Builder()
+                        .url(postUrl)
+                        .post(formBody)
+                        .addHeader("Content-Type", "application/x-www-form-urlencoded")
+                        .build();
+                try (Response postResp = client.newCall(postReq).execute()) {
+                    // 302 为华立 PRG 正常行为，不输出
+                }
+                sleep(300);
+            } catch (Exception e) {
+                // 前置 POST 异常静默，继续 GET
+            }
+        }
+
         Request request = new Request.Builder().url(url).build();
         try (Response response = client.newCall(request).execute()) {
             String html = Objects.requireNonNull(response.body()).string();
             htmlCache.put(diff, html);
+            saveHtmlToDownload(diff, html);
             boolean isSilent = diff < 0; // 用户信息(-1)和最近游玩(-2)静默
             if (!isSilent) writeLog("[DOWNLOAD] 已获取" + label + "数据");
         } catch (Exception e) {
             writeLog("[ERROR] 获取" + label + "失败: 异常 - " + e.getMessage());
+        }
+    }
+
+    /** 将 HTML 以 [HH:MM:SS]{难度}.html 命名保存到应用专属 Download 目录（避免 Android 10+ scoped storage EPERM） */
+    private static void saveHtmlToDownload(int diff, String html) {
+        if (com.noharayh.otokit.DataContext.AppContext == null) return;
+        try {
+            File downloadDir = com.noharayh.otokit.DataContext.AppContext.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+            if (downloadDir == null || (!downloadDir.exists() && !downloadDir.mkdirs())) return;
+            String time = new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date());
+            String fileName = "[" + time + "]" + diff + ".html";
+            File file = new File(downloadDir, fileName);
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                fos.write(html.getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "saveHtmlToDownload failed: " + e.getMessage());
         }
     }
 

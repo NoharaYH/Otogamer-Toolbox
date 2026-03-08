@@ -1,9 +1,13 @@
 package com.noharayh.otokit;
 
+import android.content.Context;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class DataContext {
+    /** 用于保存 HTML 到 Download 目录，由 MainActivity 在启动时设置 */
+    public static Context AppContext = null;
     public static String Username = null;
 
     public static String Password = null;
@@ -29,4 +33,6 @@ public class DataContext {
     public static List<Integer> Difficulties = new ArrayList<>();
     public static List<String> GenreList = new ArrayList<>();
     public static java.util.Map<Integer, String> FetchUrlMap = new java.util.HashMap<>();
+    /** 中二 diff 0-4 需先 POST 再 GET */
+    public static java.util.Map<Integer, String> FetchPostUrlMap = new java.util.HashMap<>();
 }
