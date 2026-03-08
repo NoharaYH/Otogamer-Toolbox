@@ -14,6 +14,7 @@ import '../../domain/usecases/transfer/refresh_lxns_token_usecase.dart';
 import '../../domain/usecases/transfer/start_import_usecase.dart';
 import '../../domain/usecases/transfer/stop_import_usecase.dart';
 import '../../domain/usecases/transfer/verify_tokens_usecase.dart';
+import '../../infrastructure/games/chunithm/chunithm_module.dart';
 import '../../infrastructure/games/maimai/maimai_module.dart';
 import '../../infrastructure/native/channel/vpn_channel_gateway.dart';
 import '../../infrastructure/parsers/maimai_html_parser_impl.dart';
@@ -55,8 +56,15 @@ void configureDependencies() {
       getIt<HtmlRecordParser>(),
     ),
   );
+  getIt.registerLazySingleton<ChunithmModule>(
+    () => ChunithmModule(
+      getIt<AppEnv>(),
+      getIt<MusicLibraryRepository>(),
+      getIt<HtmlRecordParser>(),
+    ),
+  );
   getIt.registerLazySingleton<GameRegistry>(
-    () => GameRegistry([getIt<MaimaiModule>()]),
+    () => GameRegistry([getIt<MaimaiModule>(), getIt<ChunithmModule>()]),
   );
 
   getIt.registerLazySingleton<VerifyTokensUsecase>(
