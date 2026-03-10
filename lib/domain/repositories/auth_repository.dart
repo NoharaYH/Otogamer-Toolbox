@@ -13,8 +13,9 @@ abstract class AuthRepository {
   );
   Future<Result<TokenBundle, AuthException>> exchangeLxnsCode(
     String code,
-    String verifier,
-  );
+    String verifier, {
+    String? redirectUri,
+  });
   Future<Result<TokenBundle, AuthException>> refreshLxnsToken(String refreshToken);
   Future<void> saveTokenBundle(TokenBundle bundle);
   Future<TokenBundle> loadTokenBundle();

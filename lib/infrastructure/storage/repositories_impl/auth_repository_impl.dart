@@ -61,9 +61,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<TokenBundle, AuthException>> exchangeLxnsCode(
     String code,
-    String verifier,
-  ) async {
-    final result = await _lxns.exchangeCode(code, verifier);
+    String verifier, {
+    String? redirectUri,
+  }) async {
+    final result = await _lxns.exchangeCode(code, verifier, redirectUri: redirectUri);
     return result.fold(
       (dto) async {
         final bundle = await loadTokenBundle();

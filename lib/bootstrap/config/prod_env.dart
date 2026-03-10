@@ -34,6 +34,9 @@ class ProdEnv implements AppEnv {
   String get oauthDeepLinkHost => SystemConfig.oauthDeepLinkHost;
 
   @override
+  String get oauthRedirectUriDeepLink => SystemConfig.oauthRedirectUriDeepLink;
+
+  @override
   String get proxyBaseUrl => SystemConfig.proxyBaseUrl;
 
   @override

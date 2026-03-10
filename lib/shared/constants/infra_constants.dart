@@ -12,6 +12,8 @@ class InfraConstants {
   static const String oauthRedirectUri =
       'http://127.0.0.1:$oauthPort$oauthCallbackPath';
   static const String oauthDeepLinkHost = 'app.otokit.com';
+  static const String oauthRedirectUriDeepLink =
+      'otokit://com.noharayh.otokit/oauth/callback';
   static const String oauthScope =
       'read_user_profile+read_player+write_player+read_user_token';
 

@@ -16,8 +16,9 @@ class LxnsApiClient {
 
   Future<Result<TokenResponseDto, AuthException>> exchangeCode(
     String code,
-    String codeVerifier,
-  ) async {
+    String codeVerifier, {
+    String? redirectUri,
+  }) async {
     try {
       final response = await _dio.post(
         _env.lxnsTokenExchangeUrl,
@@ -26,7 +27,7 @@ class LxnsApiClient {
           'client_id': _env.lxnsClientId,
           'code': code,
           'code_verifier': codeVerifier,
-          'redirect_uri': _env.oauthRedirectUri,
+          'redirect_uri': redirectUri ?? _env.oauthRedirectUri,
         },
       );
       if (response.statusCode == 200) {

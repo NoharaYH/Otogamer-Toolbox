@@ -125,11 +125,15 @@ class TransferController extends ChangeNotifier {
   }
 
   void _initDeepLinks() {
+    final deepLinkHost = Uri.parse(_env.oauthRedirectUriDeepLink).host;
     _linkSubscription = _appLinks.uriLinkStream.listen((uri) async {
       debugPrint('[DEEPLINK] Incoming: $uri');
-      if ((uri.scheme == 'https' || uri.scheme == 'otokit') &&
-          uri.host == _env.oauthDeepLinkHost &&
-          uri.path == _env.oauthCallbackPath) {
+      final isOAuthCallback = uri.path == _env.oauthCallbackPath &&
+          ((uri.scheme == 'https' && uri.host == _env.oauthDeepLinkHost) ||
+              (uri.scheme == 'otokit' &&
+                  (uri.host == _env.oauthDeepLinkHost ||
+                      uri.host == deepLinkHost)));
+      if (isOAuthCallback) {
         final state = uri.queryParameters['state'];
         final code = uri.queryParameters['code'];
         if (state != null && code != null) {
@@ -137,7 +141,10 @@ class TransferController extends ChangeNotifier {
           if (decoded.contains('tenant=lxns')) {
             int gt = 0;
             if (decoded.contains('gameType=1')) gt = 1;
-            await _handleLxnsOAuth(code, gameType: gt);
+            final redirectUri = uri.scheme == 'otokit' && uri.host == deepLinkHost
+                ? _env.oauthRedirectUriDeepLink
+                : _env.oauthRedirectUri;
+            await _handleLxnsOAuth(code, gameType: gt, redirectUri: redirectUri);
           }
         }
       }
@@ -146,6 +153,7 @@ class TransferController extends ChangeNotifier {
 
   /// 发起落雪 OAuth 授权流程 (PKCE)
   /// [gameType]: 0 = maimai, 1 = chunithm
+  /// Android 使用 deep link 回调以从第三方浏览器唤起应用；桌面使用本地 HTTP 服务。
   Future<void> startLxnsOAuthFlow({int gameType = 0}) async {
     _pkceVerifier = PkceHelper.generateVerifier();
     final challenge = PkceHelper.computeChallenge(_pkceVerifier!);
@@ -157,43 +165,52 @@ class TransferController extends ChangeNotifier {
     );
 
     final scope = _env.oauthScope;
-    final oauthPort = _env.oauthPort;
-    final redirectUri = _env.oauthRedirectUri;
+    final isAndroid = Platform.isAndroid;
+    final redirectUri =
+        isAndroid ? _env.oauthRedirectUriDeepLink : _env.oauthRedirectUri;
 
-    try {
-      final server = await HttpServer.bind(
-        InternetAddress.loopbackIPv4,
-        oauthPort,
-        shared: true,
-      );
-      server.listen((HttpRequest request) async {
-        if (request.uri.path == _env.oauthCallbackPath) {
-          final code = request.uri.queryParameters['code'];
-          final stateParam = request.uri.queryParameters['state'];
-          request.response
-            ..statusCode = 200
-            ..headers.contentType = ContentType.html
-            ..write(
-              '<meta charset="utf-8"><body><h2 style="text-align:center;margin-top:50px;">${DomainConstants.oauthSuccess}！您可以关闭此网页并返回 ${DomainConstants.appName}。</h2></body>',
-            );
-          await request.response.close();
-          await server.close(force: true);
+    if (!isAndroid) {
+      try {
+        final oauthPort = _env.oauthPort;
+        final server = await HttpServer.bind(
+          InternetAddress.loopbackIPv4,
+          oauthPort,
+          shared: true,
+        );
+        server.listen((HttpRequest request) async {
+          if (request.uri.path == _env.oauthCallbackPath) {
+            final code = request.uri.queryParameters['code'];
+            final stateParam = request.uri.queryParameters['state'];
+            request.response
+              ..statusCode = 200
+              ..headers.contentType = ContentType.html
+              ..write(
+                '<meta charset="utf-8"><body><h2 style="text-align:center;margin-top:50px;">${DomainConstants.oauthSuccess}！您可以关闭此网页并返回 ${DomainConstants.appName}。</h2></body>',
+              );
+            await request.response.close();
+            await server.close(force: true);
 
-          if (code != null) {
-            int gt = 0;
-            if (stateParam != null) {
-              final decoded = utf8.decode(base64Url.decode(stateParam));
-              if (decoded.contains('gameType=1')) gt = 1;
+            if (code != null) {
+              int gt = 0;
+              if (stateParam != null) {
+                final decoded =
+                    utf8.decode(base64Url.decode(stateParam));
+                if (decoded.contains('gameType=1')) gt = 1;
+              }
+              await _handleLxnsOAuth(
+                code,
+                gameType: gt,
+                redirectUri: _env.oauthRedirectUri,
+              );
             }
-            await _handleLxnsOAuth(code, gameType: gt);
           }
-        }
-      });
-      Future.delayed(const Duration(minutes: 5), () {
-        server.close(force: true);
-      });
-    } catch (e) {
-      debugPrint("[OAuth] Server bind error: $e");
+        });
+        Future.delayed(const Duration(minutes: 5), () {
+          server.close(force: true);
+        });
+      } catch (e) {
+        debugPrint("[OAuth] Server bind error: $e");
+      }
     }
 
     final url = Uri.parse(
@@ -215,7 +232,11 @@ class TransferController extends ChangeNotifier {
     }
   }
 
-  Future<void> _handleLxnsOAuth(String code, {int gameType = 0}) async {
+  Future<void> _handleLxnsOAuth(
+    String code, {
+    int gameType = 0,
+    required String redirectUri,
+  }) async {
     if (_pkceVerifier == null) {
       _errorMessage = DomainConstants.errOAuthNoVerifier;
       notifyListeners();
@@ -227,7 +248,11 @@ class TransferController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await _authRepo.exchangeLxnsCode(code, _pkceVerifier!);
+      final result = await _authRepo.exchangeLxnsCode(
+        code,
+        _pkceVerifier!,
+        redirectUri: redirectUri,
+      );
       result.fold(
         (bundle) {
           lxnsToken = bundle.lxnsToken;

@@ -10,6 +10,8 @@ abstract class AppEnv {
   String get oauthCallbackPath;
   String get oauthScope;
   String get oauthDeepLinkHost;
+  /// Android 专用：OAuth 回调 deep link（落雪重定向后唤起应用）
+  String get oauthRedirectUriDeepLink;
   String get proxyBaseUrl;
   String get lxnsBaseUrl;
   String get lxnsAuthorizeUrl;

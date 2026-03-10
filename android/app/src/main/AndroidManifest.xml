@@ -32,12 +32,12 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="app.otokit.com" android:path="/oauth/callback" />
             </intent-filter>
-            <!-- 备用协议映射（当无服务器配置 assetlinks 时使用协议回调） -->
+            <!-- Android OAuth 回调：包名 host，落雪重定向后唤起应用 -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="otokit" android:host="app.otokit.com" android:path="/oauth/callback" />
+                <data android:scheme="otokit" android:host="com.noharayh.otokit" android:path="/oauth/callback" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
