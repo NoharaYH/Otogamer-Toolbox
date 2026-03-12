@@ -1,21 +1,42 @@
 class AppAssets {
-  // Maimai Backgrounds
+  // Maimai Circle Backgrounds (L0–L4)
   static const String maimaiBgPattern =
-      'assets/background/maimaidx/circle/bg_pattern.png';
+      'assets/background/maimaidx/circle/bg_pattern.webp';
   static const String maimaiCircleWhite =
-      'assets/background/maimaidx/circle/circle_white.png';
+      'assets/background/maimaidx/circle/circle_white.webp';
   static const String maimaiCircleYellow =
-      'assets/background/maimaidx/circle/circle_yellow.png';
+      'assets/background/maimaidx/circle/circle_yellow.webp';
   static const String maimaiCircleColorful =
-      'assets/background/maimaidx/circle/circle_colorful.png';
+      'assets/background/maimaidx/circle/circle_colorful.webp';
   static const String maimaiTopLeft =
-      'assets/background/maimaidx/circle/top_left.png';
+      'assets/background/maimaidx/circle/top_left.webp';
   static const String maimaiTopRight =
-      'assets/background/maimaidx/circle/top_right.png';
+      'assets/background/maimaidx/circle/top_right.webp';
   static const String maimaiBottomLeft =
-      'assets/background/maimaidx/circle/bottom_left.png';
+      'assets/background/maimaidx/circle/bottom_left.webp';
   static const String maimaiBottomRight =
-      'assets/background/maimaidx/circle/bottom_right.png';
+      'assets/background/maimaidx/circle/bottom_right.webp';
+  // Circle L4 氛围层
+  static const String maimaiTileGreen =
+      'assets/background/maimaidx/circle/tile_green.webp';
+  static const String maimaiTilePurpleLeft =
+      'assets/background/maimaidx/circle/tile_purple_left.webp';
+  static const String maimaiTilePurpleRight =
+      'assets/background/maimaidx/circle/tile_purple_right.webp';
+  static const String maimaiStarPink =
+      'assets/background/maimaidx/circle/star_pink.webp';
+  static const String maimaiStarYellow =
+      'assets/background/maimaidx/circle/star_yellow.webp';
+  static const String maimai3dCube =
+      'assets/background/maimaidx/circle/3d_cube.webp';
+  static const String maimai3dStarSmall =
+      'assets/background/maimaidx/circle/3d_star_small.webp';
+  static const String maimai3dStars =
+      'assets/background/maimaidx/circle/3d_stars.webp';
+  static const String maimai3dGloveBlue =
+      'assets/background/maimaidx/circle/3d_glove_blue.webp';
+  static const String maimai3dGlovePink =
+      'assets/background/maimaidx/circle/3d_glove_pink.webp';
 
   // Chunithm Backgrounds
   static const String chunithmBg =
