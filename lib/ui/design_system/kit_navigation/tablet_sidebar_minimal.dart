@@ -325,6 +325,13 @@ class _TabletSidebarMinimalState extends State<TabletSidebarMinimal>
       mainAxisSize: MainAxisSize.min,
       children: [
         KitNavCapsule(
+          icon: Icons.close,
+          isCircle: true,
+          onTap: () => ctrl.close(),
+          isSelected: false,
+        ),
+        const SizedBox(height: 12.0),
+        KitNavCapsule(
           icon: Icons.settings,
           isCircle: true,
           onTap: () => nav.openSettings(),
