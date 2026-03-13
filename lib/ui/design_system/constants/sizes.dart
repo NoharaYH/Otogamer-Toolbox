@@ -48,11 +48,17 @@ class UiSizes {
     return screenEdgeMargin;
   }
 
+  /// 【平板 vs 手机】平板玻璃内组件不再叠加 5% 顶边距（玻璃本身仍由 Shell 定位）。
   static double getTopMargin(BuildContext context) {
+    final scope = ResponsiveLayoutScope.maybeOf(context);
+    if (scope != null && !scope.isCompactNavigation) return 0.0;
     return MediaQuery.of(context).size.height * shellMarginTopMultiplier;
   }
 
+  /// 平板玻璃内组件不预留安全区，仅待在玻璃内即可。
   static double getTopMarginWithSafeArea(BuildContext context) {
+    final scope = ResponsiveLayoutScope.maybeOf(context);
+    if (scope != null && !scope.isCompactNavigation) return 0.0;
     final double base = getTopMargin(context);
     final double safeTop = MediaQuery.of(context).padding.top;
     return safeTop > base ? safeTop + spaceXS : base;

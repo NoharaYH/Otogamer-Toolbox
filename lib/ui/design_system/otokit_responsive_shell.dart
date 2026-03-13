@@ -253,7 +253,11 @@ class _TabletExpandedLayoutState extends State<_TabletExpandedLayout>
 
   @override
   Widget build(BuildContext context) {
-    final top = UiSizes.getTopMarginWithSafeArea(context);
+    // 玻璃定位始终用 5% + 安全区；玻璃内组件由 UiSizes.getTopMargin 在平板返回 0 不再叠加
+    final mq = MediaQuery.of(context);
+    final base = mq.size.height * UiSizes.shellMarginTopMultiplier;
+    final safeTop = mq.padding.top;
+    final top = safeTop > base ? safeTop + UiSizes.spaceXS : base;
 
     return Consumer<TabletSidebarController>(
       builder: (context, ctrl, _) {
@@ -276,7 +280,8 @@ class _TabletExpandedLayoutState extends State<_TabletExpandedLayout>
               animation: _glassOffsetCurve,
               builder: (context, _) {
                 final offsetX =
-                    _startOffsetX + (_endOffsetX - _startOffsetX) * _glassOffsetCurve.value;
+                    _startOffsetX +
+                    (_endOffsetX - _startOffsetX) * _glassOffsetCurve.value;
                 return Positioned(
                   top: top,
                   left: _tabletGlassMargin + offsetX,
@@ -322,8 +327,7 @@ class _TabletExpandedLayoutState extends State<_TabletExpandedLayout>
                 side: ctrl.side,
                 expanded: ctrl.isExpanded,
                 isLeaving: ctrl.isClosing,
-                onLeaveComplete:
-                    ctrl.isClosing ? ctrl.finalizeClose : null,
+                onLeaveComplete: ctrl.isClosing ? ctrl.finalizeClose : null,
               ),
             ],
             // 4. 侧边栏打开且未关闭中时，点击玻璃区域收回
