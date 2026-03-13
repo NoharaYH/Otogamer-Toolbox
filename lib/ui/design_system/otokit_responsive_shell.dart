@@ -375,7 +375,19 @@ class _TabletExpandedLayoutState extends State<_TabletExpandedLayout>
             ),
           ),
           CustomPaint(painter: _TabletGlassStrokePainter()),
-          Positioned.fill(child: widget.content),
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final mq = MediaQuery.of(context);
+                return MediaQuery(
+                  data: mq.copyWith(
+                    size: Size(constraints.maxWidth, constraints.maxHeight),
+                  ),
+                  child: widget.content,
+                );
+              },
+            ),
+          ),
           Positioned(
             top: 12.0,
             right: 12.0,
