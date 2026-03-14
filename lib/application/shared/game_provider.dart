@@ -220,7 +220,7 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 更新玻璃层偏好并持久化。写入前做 [GlassOverlayPrefs.normalized]，保证不透明度与模糊不同时为 0。
+  /// 更新玻璃层偏好并持久化。写入前做 [GlassOverlayPrefs.normalized]，保证关闭不透明度时 blur/stroke 同步关闭。
   Future<void> setGlassOverlayPrefs(GlassOverlayPrefs value) async {
     final normalized = value.normalized();
     if (_glassOverlayPrefs == normalized) return;

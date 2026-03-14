@@ -65,6 +65,7 @@ class _RootPageState extends State<RootPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final coordinator = context.read<RootThemeCoordinator>();
+    final glassConfig = context.watch<GameProvider>().glassOverlayPrefs;
     return GestureDetector(
       onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
       behavior: HitTestBehavior.translucent,
@@ -75,18 +76,18 @@ class _RootPageState extends State<RootPage> with WidgetsBindingObserver {
             child: ValueListenableBuilder<ResolvedThemeBundle>(
               valueListenable: coordinator.resolvedBundle,
               builder: (context, bundle, _) {
-                // 【平板 vs 手机·区分】是否显示 PageShell 毛玻璃：Compact 显示，Medium+ 由 Shell 内平板玻璃层负责。
-                // 断点与 layout_analyzer 一致（600）；建议后续改为从 ResponsiveLayoutScope 或 Shell 提供语义，统一数据源。
                 final isCompact =
                     MediaQuery.sizeOf(context).width < 600;
                 return PageShell(
                   backgroundOverride: bundle.buildBackground(context),
                   showGlassOverlay: isCompact,
+                  glassOverlayConfig: glassConfig,
                   child: Theme(
                     data: Theme.of(context).copyWith(
                       extensions: [bundle.theme],
                     ),
                     child: OtokitResponsiveShell(
+                      glassOverlayConfig: glassConfig,
                       child: Consumer<NavigationProvider>(
                         builder: (context, nav, _) {
                           final Widget page;

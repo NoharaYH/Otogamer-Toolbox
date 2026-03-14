@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../application/shared/navigation_provider.dart';
+import '../../shared/models/glass_overlay_prefs.dart';
 import 'constants/animations.dart';
 import 'constants/colors.dart';
 import 'constants/layout_analyzer.dart';
@@ -39,7 +40,14 @@ class OtokitResponsiveShell extends StatefulWidget {
   /// 页面内容（AnimatedSwitcher 包裹的当前页面）
   final Widget child;
 
-  const OtokitResponsiveShell({super.key, required this.child});
+  /// 玻璃层可选配置。由 RootPage 从 GameProvider.glassOverlayPrefs 传入；null 时使用默认。
+  final GlassOverlayPrefs? glassOverlayConfig;
+
+  const OtokitResponsiveShell({
+    super.key,
+    required this.child,
+    this.glassOverlayConfig,
+  });
 
   @override
   State<OtokitResponsiveShell> createState() => _OtokitResponsiveShellState();
@@ -109,7 +117,10 @@ class _OtokitResponsiveShellState extends State<OtokitResponsiveShell> {
   Widget _buildExpandedLayout(BuildContext context, Widget content) {
     return ChangeNotifierProvider<TabletSidebarController>.value(
       value: _getOrCreateTabletController(),
-      child: _TabletExpandedLayout(content: content),
+      child: _TabletExpandedLayout(
+        content: content,
+        glassOverlayConfig: widget.glassOverlayConfig,
+      ),
     );
   }
 
@@ -179,8 +190,12 @@ class _OtokitResponsiveShellState extends State<OtokitResponsiveShell> {
 /// 仅出现在 _buildExpandedLayout 子树，使用 TabletSidebarController，手机路径不包含此类。
 class _TabletExpandedLayout extends StatefulWidget {
   final Widget content;
+  final GlassOverlayPrefs? glassOverlayConfig;
 
-  const _TabletExpandedLayout({required this.content});
+  const _TabletExpandedLayout({
+    required this.content,
+    this.glassOverlayConfig,
+  });
 
   @override
   State<_TabletExpandedLayout> createState() => _TabletExpandedLayoutState();
@@ -298,6 +313,7 @@ class _TabletExpandedLayoutState extends State<_TabletExpandedLayout>
                         onBlankTap: (ctrl.isOpen && !ctrl.isClosing)
                             ? () => ctrl.close()
                             : null,
+                        glassConfig: widget.glassOverlayConfig,
                       ),
                     ),
                     Positioned(
@@ -349,7 +365,7 @@ class _TabletExpandedLayoutState extends State<_TabletExpandedLayout>
   }
 
   Widget _buildTabletGlassChild(BuildContext context,
-      {VoidCallback? onBlankTap}) {
+      {VoidCallback? onBlankTap, GlassOverlayPrefs? glassConfig}) {
     const borderRadius = BorderRadius.only(
       topLeft: Radius.circular(28.0),
       topRight: Radius.circular(28.0),
@@ -363,27 +379,23 @@ class _TabletExpandedLayoutState extends State<_TabletExpandedLayout>
           )
         : widget.content;
 
+    final prefs = glassConfig?.normalized();
+
+    final glassVisual = Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildTabletGlassFillLayer(prefs),
+        if (prefs == null || prefs.strokeEnabled)
+          CustomPaint(painter: _TabletGlassStrokePainter()),
+      ],
+    );
+
     return ClipRRect(
       borderRadius: borderRadius,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    UiColors.white.withValues(alpha: 0.50),
-                    UiColors.white.withValues(alpha: 0.24),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          CustomPaint(painter: _TabletGlassStrokePainter()),
+          glassVisual,
           Positioned.fill(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -417,10 +429,62 @@ class _TabletExpandedLayoutState extends State<_TabletExpandedLayout>
       ),
     );
   }
+
+  static const double _blurSigma = 12.0;
+  static const double _opacityTop = 0.50;
+  static const double _opacityBottom = 0.24;
+
+  Widget _buildTabletGlassFillLayer(GlassOverlayPrefs? prefs) {
+    if (prefs == null) {
+      return BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: _blurSigma, sigmaY: _blurSigma),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                UiColors.white.withValues(alpha: _opacityTop),
+                UiColors.white.withValues(alpha: _opacityBottom),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (!prefs.opacityEnabled) {
+      return Container(color: UiColors.white);
+    }
+
+    final fillChild = Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            UiColors.white.withValues(alpha: _opacityTop),
+            UiColors.white.withValues(alpha: _opacityBottom),
+          ],
+        ),
+      ),
+    );
+
+    if (prefs.blurEnabled) {
+      return BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: _blurSigma, sigmaY: _blurSigma),
+        child: fillChild,
+      );
+    }
+    return fillChild;
+  }
 }
 
 class _TabletGlassStrokePainter extends CustomPainter {
+  _TabletGlassStrokePainter();
+
   static const double _topRadius = 28.0;
+  static const double _strokeWidth = 2.25;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -433,12 +497,12 @@ class _TabletGlassStrokePainter extends CustomPainter {
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..shader = const LinearGradient(
+      ..strokeWidth = _strokeWidth
+      ..shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [Colors.white, Colors.transparent],
-        stops: [0.0, 0.7],
+        stops: const [0.0, 0.7],
       ).createShader(rect);
 
     canvas.drawRRect(rrect, paint);

@@ -23,6 +23,7 @@ class StorageService {
   static const kThemeMode = 'theme_mode'; // String: 'global' or 'independent'
   static const kMaiSkinId = 'mai_skin_id'; // String: skinId for maimai DX
   static const kChuSkinId = 'chu_skin_id'; // String: skinId for chunithm
+  static const kGlassOverlayPrefs = 'glass_overlay_prefs'; // JSON: glass layer opts
 
   // Generic Write
   Future<void> save(String key, String value) async {

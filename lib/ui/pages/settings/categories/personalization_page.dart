@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../application/shared/game_provider.dart';
-import '../../../../application/shared/glass_slider_preview_provider.dart';
-import '../../../../shared/models/glass_overlay_prefs.dart';
 import '../../../design_system/constants/sizes.dart';
 import '../../../design_system/constants/colors.dart';
 import '../../../design_system/theme/core/app_theme.dart';
@@ -30,13 +28,12 @@ enum _ThemeMode {
 /// 层级逻辑：
 /// - 模式选择器（全局 / 独立）
 /// - 按模式渲染相应的 Dropdown + 调色面板展开槽
-/// - 玻璃效果卡片：拖动滑块时由 [GlassSliderPreviewProvider] 触发整页仅保留当前滑条（类系统亮度条）
+/// - 玻璃效果卡片：三开关横向排列（不透明度、模糊、描边）
 class PersonalizationPage extends StatelessWidget {
   const PersonalizationPage({super.key, Color? themeColor});
 
   @override
   Widget build(BuildContext context) {
-    final previewProvider = context.read<GlassSliderPreviewProvider>();
     return SingleChildScrollView(
       key: const ValueKey('personalization_page_view'),
       clipBehavior: Clip.none,
@@ -53,16 +50,11 @@ class PersonalizationPage extends StatelessWidget {
             child: SkinSelectorAssembly(),
           ),
           const SizedBox(height: 16),
-          SettingCard(
+          const SettingCard(
             index: 2,
             title: '主界面玻璃效果',
             icon: Icons.blur_on,
-            child: GlassOverlaySettingsContent(
-              isPreviewMode: false,
-              activeSliderKey: null,
-              onSliderDragStart: previewProvider.startDrag,
-              onSliderDragEnd: previewProvider.endDrag,
-            ),
+            child: GlassOverlaySettingsContent(),
           ),
         ],
       ),
@@ -71,201 +63,161 @@ class PersonalizationPage extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 玻璃效果设置内容：不透明度 / 模糊 / 描边（含 S/L）；拖动时仅保留当前滑条供预览
+// 玻璃效果设置内容：三选框横向排列（不透明度、模糊、描边），样式与主题皮肤的 _ModeChip 一致
 // ─────────────────────────────────────────────────────────────────────────────
 
 class GlassOverlaySettingsContent extends StatelessWidget {
-  const GlassOverlaySettingsContent({
-    super.key,
-    required this.isPreviewMode,
-    required this.activeSliderKey,
-    required this.onSliderDragStart,
-    required this.onSliderDragEnd,
-  });
-
-  final bool isPreviewMode;
-  final String? activeSliderKey;
-  final void Function(String key) onSliderDragStart;
-  final VoidCallback onSliderDragEnd;
-
-  static const String _keyOpacity = 'opacity';
-  static const String _keyBlur = 'blur';
+  const GlassOverlaySettingsContent({super.key});
 
   @override
   Widget build(BuildContext context) {
     final gp = context.watch<GameProvider>();
     final prefs = gp.glassOverlayPrefs;
 
-    if (isPreviewMode && activeSliderKey != null) {
-      return _buildSingleRow(context, prefs, gp, activeSliderKey!);
-    }
+    const warningColor = Color(0xFFA0A0A0); // RGB(160,160,160)
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildOpacityRow(context, prefs, gp),
-        const SizedBox(height: 12),
-        _buildBlurRow(context, prefs, gp),
-        const SizedBox(height: 12),
-        _buildStrokeSection(context, prefs, gp),
-        const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: () => gp.setGlassOverlayPrefs(GlassOverlayPrefs.initial),
-            icon: const Icon(Icons.restore_rounded, size: 18, color: UiColors.grey600),
-            label: const Text('恢复默认', style: TextStyle(fontSize: 13, color: UiColors.grey600)),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSingleRow(
-      BuildContext context, GlassOverlayPrefs prefs, GameProvider gp, String key) {
-    Widget row;
-    switch (key) {
-      case _keyOpacity:
-        row = _buildOpacityRow(context, prefs, gp);
-        break;
-      case _keyBlur:
-        row = _buildBlurRow(context, prefs, gp);
-        break;
-      default:
-        return const SizedBox.shrink();
-    }
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        row,
-        const SizedBox(height: 12),
-        Text(
-          '松开恢复',
-          style: TextStyle(fontSize: 11, color: UiColors.grey500),
-        ),
-      ],
-    );
-  }
-
-  void _applyPrefs(GameProvider gp, GlassOverlayPrefs next) {
-    var applied = next;
-    if (applied.effectiveOpacity == 0 && applied.effectiveBlur == 0) {
-      applied = applied.copyWith(opacity: GlassOverlayPrefs.opacitySafeThreshold255);
-    }
-    gp.setGlassOverlayPrefs(applied);
-  }
-
-  Widget _buildOpacityRow(
-      BuildContext context, GlassOverlayPrefs prefs, GameProvider gp) {
-    const maxAlpha = 255.0;
-    final minAlpha = prefs.blurEnabled ? 0.0 : GlassOverlayPrefs.opacitySafeThreshold255;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Text('不透明度', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: UiColors.grey800)),
-            const SizedBox(width: 12),
-            Switch(
-              value: prefs.opacityEnabled,
-              onChanged: (v) {
-                var next = prefs.copyWith(opacityEnabled: v);
-                if (v && next.opacity < minAlpha) next = next.copyWith(opacity: minAlpha);
-                _applyPrefs(gp, next);
-              },
-            ),
-          ],
-        ),
-        if (prefs.opacityEnabled) ...[
-          const SizedBox(height: 6),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 6,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-            ),
-            child: Slider(
-              value: prefs.opacity.clamp(minAlpha, maxAlpha),
-              min: minAlpha,
-              max: maxAlpha,
-              onChanged: (v) {
-                var next = prefs.copyWith(opacity: v);
-                if (v == 0 && next.effectiveBlur == 0) next = next.copyWith(blurEnabled: true, blurStrength: 0.1);
-                gp.setGlassOverlayPrefs(next.normalized());
-              },
-              onChangeStart: (_) => onSliderDragStart(_keyOpacity),
-              onChangeEnd: (_) => onSliderDragEnd(),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildBlurRow(
-      BuildContext context, GlassOverlayPrefs prefs, GameProvider gp) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Text('模糊', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: UiColors.grey800)),
-            const SizedBox(width: 12),
-            Switch(
-              value: prefs.blurEnabled,
-              onChanged: (v) => _applyPrefs(gp, prefs.copyWith(blurEnabled: v)),
-            ),
-          ],
-        ),
-        if (prefs.blurEnabled) ...[
-          const SizedBox(height: 6),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 6,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-            ),
-            child: Slider(
-              value: prefs.blurStrength,
-              min: 0.0,
-              max: 1.0,
-              onChanged: (v) {
-                var next = prefs.copyWith(blurStrength: v);
-                if (v == 0 && next.effectiveOpacity == 0) next = next.copyWith(opacity: GlassOverlayPrefs.opacitySafeThreshold255);
-                gp.setGlassOverlayPrefs(next.normalized());
-              },
-              onChangeStart: (_) => onSliderDragStart(_keyBlur),
-              onChangeEnd: (_) => onSliderDragEnd(),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildStrokeSection(
-      BuildContext context, GlassOverlayPrefs prefs, GameProvider gp) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('描边', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: UiColors.grey800)),
-        const SizedBox(width: 12),
-        Switch(
-          value: prefs.strokeEnabled,
-          onChanged: (v) => _applyPrefs(
-            gp,
-            prefs.copyWith(
-              strokeEnabled: v,
-              strokeSolidWhite: false,
-              strokeSaturation: 0,
-              strokeLightness: 1,
+        _GlassToggleChip(
+          label: '不透明度',
+          icon: Icons.opacity_rounded,
+          isSelected: prefs.opacityEnabled,
+          enabled: true,
+          onTap: () {
+            final next = prefs.copyWith(opacityEnabled: !prefs.opacityEnabled);
+            gp.setGlassOverlayPrefs(
+              next.opacityEnabled
+                  ? next
+                  : next.copyWith(blurEnabled: false, strokeEnabled: false),
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        _GlassToggleChip(
+          label: '模糊',
+          icon: Icons.blur_on_rounded,
+          isSelected: prefs.blurEnabled,
+          enabled: prefs.opacityEnabled,
+          onTap: prefs.opacityEnabled
+              ? () => gp.setGlassOverlayPrefs(
+                    prefs.copyWith(blurEnabled: !prefs.blurEnabled),
+                  )
+              : null,
+        ),
+        const SizedBox(width: 8),
+        _GlassToggleChip(
+          label: '描边',
+          icon: Icons.border_outer_rounded,
+          isSelected: prefs.strokeEnabled,
+          enabled: prefs.opacityEnabled,
+          onTap: prefs.opacityEnabled
+              ? () => gp.setGlassOverlayPrefs(
+                    prefs.copyWith(strokeEnabled: !prefs.strokeEnabled),
+                  )
+              : null,
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  '⚠',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: warningColor,
+                    height: 1.2,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    '若开启模糊会\n极大增加性能开销',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: warningColor,
+                      height: 1.2,
+                    ),
+                    softWrap: true,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// 玻璃效果开关选框，样式与 _ModeChip 一致（圆角容器 + 图标 + 文本，选中时高亮）
+class _GlassToggleChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final bool enabled;
+  final VoidCallback? onTap;
+
+  const _GlassToggleChip({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.enabled,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveSelected = enabled && isSelected;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeInOutCubic,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: effectiveSelected
+            ? UiColors.grey800.withValues(alpha: 0.08)
+            : Colors.transparent,
+        border: Border.all(
+          color: effectiveSelected ? UiColors.grey600 : UiColors.grey200,
+          width: 1,
+        ),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: enabled
+                    ? (effectiveSelected ? UiColors.grey800 : UiColors.grey400)
+                    : UiColors.grey300,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight:
+                      effectiveSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: enabled
+                      ? (effectiveSelected ? UiColors.grey800 : UiColors.grey400)
+                      : UiColors.grey300,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

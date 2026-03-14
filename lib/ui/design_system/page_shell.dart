@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../shared/models/glass_overlay_prefs.dart';
 import 'constants/sizes.dart';
 import 'constants/colors.dart';
 import 'theme/core/app_theme.dart';
@@ -24,11 +25,15 @@ class PageShell extends StatelessWidget {
   /// Defaults to true.
   final bool showGlassOverlay;
 
+  /// 玻璃层可选配置。由 RootPage 从 GameProvider.glassOverlayPrefs 传入；null 时使用默认（全开、当前视觉效果）。
+  final GlassOverlayPrefs? glassOverlayConfig;
+
   const PageShell({
     super.key,
     required this.child,
     this.backgroundOverride,
     this.showGlassOverlay = true,
+    this.glassOverlayConfig,
   });
 
   @override
@@ -51,7 +56,7 @@ class PageShell extends StatelessWidget {
           Positioned.fill(child: background),
 
           // MIDDLE: The unique glass overlay layer
-          if (showGlassOverlay) _buildGlassOverlay(context),
+          if (showGlassOverlay) _buildGlassOverlay(context, glassOverlayConfig),
 
           // TOP: Content layer
           Positioned.fill(child: child),
@@ -60,13 +65,21 @@ class PageShell extends StatelessWidget {
     );
   }
 
-  Widget _buildGlassOverlay(BuildContext context) {
+  Widget _buildGlassOverlay(BuildContext context, GlassOverlayPrefs? config) {
     const borderRadius = BorderRadius.only(
-      // 悬空包裹向内缩回。由于按钮外边缘距 Glass 有 12pt 的内缩 (Padding)。
-      // 以按钮半径 R=16 为圆心计算同心弧：外侧 Glass 半径必须为 16.0 + 12.0 = 28.0。
-      // 这样保证从右上角看，按钮圆弧刚好与背景玻璃边缘成绝对完美的等距平行。
       topLeft: Radius.circular(28.0),
       topRight: Radius.circular(28.0),
+    );
+
+    final prefs = config?.normalized();
+
+    final glassStack = Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildGlassFillLayer(prefs),
+        if (prefs == null || prefs.strokeEnabled)
+          CustomPaint(painter: _GlassStrokePainter()),
+      ],
     );
 
     return Positioned(
@@ -76,47 +89,70 @@ class PageShell extends StatelessWidget {
       bottom: 0,
       child: ClipRRect(
         borderRadius: borderRadius,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            // LAYER 1：毛玻璃 + 渐变叠加（均值等价 0.25 不透明度）
-            BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12.0, sigmaY: 12.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  // 渐变叠加：基准参考 SVG fill-opacity=0.369，均值展开
-                  // topLeft 入光高亮 0.50，bottomRight 背光衰减 0.24，均值 ≈ 0.369
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      UiColors.white.withValues(alpha: 0.50),
-                      UiColors.white.withValues(alpha: 0.24),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+        child: glassStack,
+      ),
+    );
+  }
 
-            // LAYER 2：渐变描边（topLeft 纯白 → 70% stop 透明，CustomPaint 零 GPU Pass）
-            CustomPaint(painter: _GlassStrokePainter()),
+  static const double _blurSigma = 12.0;
+  static const double _opacityTop = 0.50;
+  static const double _opacityBottom = 0.24;
+
+  Widget _buildGlassFillLayer(GlassOverlayPrefs? prefs) {
+    if (prefs == null) {
+      return BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: _blurSigma, sigmaY: _blurSigma),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                UiColors.white.withValues(alpha: _opacityTop),
+                UiColors.white.withValues(alpha: _opacityBottom),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (!prefs.opacityEnabled) {
+      return Container(color: UiColors.white);
+    }
+
+    final fillChild = Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            UiColors.white.withValues(alpha: _opacityTop),
+            UiColors.white.withValues(alpha: _opacityBottom),
           ],
         ),
       ),
     );
+
+    if (prefs.blurEnabled) {
+      return BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: _blurSigma, sigmaY: _blurSigma),
+        child: fillChild,
+      );
+    }
+    return fillChild;
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 渐变描边 Painter
-//
-// 沿 glass 容器圆角矩形路径绘制 0.5px 描边。
-// 渐变方向：topLeft → bottomRight，纯白至完全透明，70% stop。
-// 不触发任何 GPU Offscreen Render Pass，与原方案性能等价。
+// 描边 Painter：渐变描边（左上白 → 右下透明，硬编码）
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _GlassStrokePainter extends CustomPainter {
+  _GlassStrokePainter();
+
   static const double _topRadius = 28.0;
+  static const double _strokeWidth = 2.25;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -129,12 +165,12 @@ class _GlassStrokePainter extends CustomPainter {
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..shader = const LinearGradient(
+      ..strokeWidth = _strokeWidth
+      ..shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [Colors.white, Colors.transparent],
-        stops: [0.0, 0.7],
+        stops: const [0.0, 0.7],
       ).createShader(rect);
 
     canvas.drawRRect(rrect, paint);
