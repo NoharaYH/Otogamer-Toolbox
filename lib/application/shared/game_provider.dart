@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../shared/models/glass_overlay_prefs.dart';
 import '../../shared/models/startup_pref_model.dart';
 import '../../shared/models/theme_preferences_model.dart';
 import '../../infrastructure/storage/secure/storage_service.dart';
@@ -45,6 +46,10 @@ class GameProvider extends ChangeNotifier {
   String _chuSkinId = 'chu_verse';
   String get chuSkinId => _chuSkinId;
 
+  // --- 玻璃层偏好 ---
+  GlassOverlayPrefs _glassOverlayPrefs = GlassOverlayPrefs.initial;
+  GlassOverlayPrefs get glassOverlayPrefs => _glassOverlayPrefs;
+
   /// 初始化：读取启动页偏好并应用，返回目标大页面 tag 供调用方注入 NavigationProvider。
   Future<PageTag> init() async {
     final prefStr = await _storageService.read(StorageService.kStartupPrefConfig);
@@ -60,6 +65,9 @@ class GameProvider extends ChangeNotifier {
     _isThemeGlobal = themeModeStr != 'independent';
     _maiSkinId = await _storageService.read(StorageService.kMaiSkinId) ?? 'mai_circle';
     _chuSkinId = await _storageService.read(StorageService.kChuSkinId) ?? 'chu_verse';
+
+    final glassPrefsStr = await _storageService.read(StorageService.kGlassOverlayPrefs);
+    _glassOverlayPrefs = GlassOverlayPrefs.parse(glassPrefsStr);
 
     int initialIndex = 0;
     PageTag initialTag = PageTag.scoreSync;
@@ -162,7 +170,6 @@ class GameProvider extends ChangeNotifier {
     return base.copyWith(
       light: _themePrefs.get(base.themeId, 'light'),
       basic: _themePrefs.get(base.themeId, 'basic'),
-      dark: _themePrefs.get(base.themeId, 'dark'),
       dotColor: _themePrefs.get(base.themeId, 'dotColor'),
       subtitleColor: _themePrefs.get(base.themeId, 'subtitleColor'),
     );
@@ -210,6 +217,18 @@ class GameProvider extends ChangeNotifier {
     if (_chuSkinId == skinId) return;
     _chuSkinId = skinId;
     await _storageService.save(StorageService.kChuSkinId, skinId);
+    notifyListeners();
+  }
+
+  /// 更新玻璃层偏好并持久化。写入前做 [GlassOverlayPrefs.normalized]，保证不透明度与模糊不同时为 0。
+  Future<void> setGlassOverlayPrefs(GlassOverlayPrefs value) async {
+    final normalized = value.normalized();
+    if (_glassOverlayPrefs == normalized) return;
+    _glassOverlayPrefs = normalized;
+    await _storageService.save(
+      StorageService.kGlassOverlayPrefs,
+      normalized.serialize(),
+    );
     notifyListeners();
   }
 

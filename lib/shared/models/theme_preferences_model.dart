@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// 主题偏好持久化模型 (BASE_INFRA §1.1)
 ///
 /// 存储格式（SKIN_COLOR.json 兼容单层结构）：
-///   {"mai_circle": {"medium": "#FF548A", "light": "#FFB7CD", "dark": "#EF096D", "dotColor": "#FF548A"}}
+///   {"mai_circle": {"basic": "#FF548A"}}
 ///
 /// 约定：
 /// - 仅记录用户已手动自定义的皮肤 + 颜色键；未自定义的键不写入。

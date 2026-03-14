@@ -23,9 +23,6 @@ class StarTrailsTheme extends AppTheme {
   Color get basic => const Color(0xFF6A1EBD);
 
   @override
-  Color get dark => const Color(0xFF333333);
-
-  @override
   Color get subtitleColor => Colors.white;
 
   @override
@@ -36,7 +33,6 @@ class StarTrailsTheme extends AppTheme {
     return _StarBackground(
       lightColor: light,
       basicColor: basic,
-      darkColor: dark,
     );
   }
 
@@ -44,7 +40,6 @@ class StarTrailsTheme extends AppTheme {
   AppTheme copyWith({
     Color? light,
     Color? basic,
-    Color? dark,
     Color? subtitleColor,
     Color? dotColor,
   }) {
@@ -54,7 +49,6 @@ class StarTrailsTheme extends AppTheme {
       idVal: themeId,
       lightColor: light ?? this.light,
       basicColor: basic ?? this.basic,
-      darkColor: dark ?? this.dark,
       subtitleColorVal: subtitleColor ?? this.subtitleColor,
       dotColorVal: dotColor ?? this.dotColor,
       baseTheme: this,
@@ -65,12 +59,10 @@ class StarTrailsTheme extends AppTheme {
 class _StarBackground extends StatefulWidget {
   final Color lightColor;
   final Color basicColor;
-  final Color darkColor;
 
   const _StarBackground({
     required this.lightColor,
     required this.basicColor,
-    required this.darkColor,
   });
 
   @override

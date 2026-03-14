@@ -23,9 +23,6 @@ class VerseTheme extends AppTheme {
   Color get basic => const Color.fromARGB(255, 111, 140, 255);
 
   @override
-  Color get dark => const Color(0xFF333333);
-
-  @override
   Color get subtitleColor => basic;
 
   @override
@@ -219,7 +216,6 @@ class VerseTheme extends AppTheme {
   AppTheme copyWith({
     Color? light,
     Color? basic,
-    Color? dark,
     Color? subtitleColor,
     Color? dotColor,
   }) {
@@ -229,7 +225,6 @@ class VerseTheme extends AppTheme {
       idVal: themeId,
       lightColor: light ?? this.light,
       basicColor: basic ?? this.basic,
-      darkColor: dark ?? this.dark,
       subtitleColorVal: subtitleColor ?? this.subtitleColor,
       dotColorVal: dotColor ?? this.dotColor,
       baseTheme: this,

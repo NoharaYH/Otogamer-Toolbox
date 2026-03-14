@@ -23,9 +23,6 @@ class DxTheme extends AppTheme {
   Color get basic => const Color(0xFF00B9EF);
 
   @override
-  Color get dark => const Color(0xFF2D2D2D);
-
-  @override
   Color get subtitleColor => basic;
 
   @override
@@ -115,20 +112,15 @@ class DxTheme extends AppTheme {
   AppTheme copyWith({
     Color? light,
     Color? basic,
-    Color? dark,
     Color? subtitleColor,
     Color? dotColor,
   }) {
-    final safeDark = (dark != null && dark.computeLuminance() > 0.3)
-        ? const Color(0xFF2D2D2D)
-        : (dark ?? this.dark);
     return AppTheme.createDynamic(
       domainVal: domain,
       titleVal: themeTitle,
       idVal: themeId,
       lightColor: light ?? this.light,
       basicColor: basic ?? this.basic,
-      darkColor: safeDark,
       subtitleColorVal: subtitleColor ?? this.subtitleColor,
       dotColorVal: dotColor ?? this.dotColor,
       baseTheme: this,

@@ -24,9 +24,6 @@ class UtageTheme extends AppTheme {
   Color get basic => const Color(0xFFB02675);
 
   @override
-  Color get dark => const Color(0xFF2D2D2D);
-
-  @override
   Color get subtitleColor => Colors.white;
 
   @override
@@ -41,7 +38,6 @@ class UtageTheme extends AppTheme {
   AppTheme copyWith({
     Color? light,
     Color? basic,
-    Color? dark,
     Color? subtitleColor,
     Color? dotColor,
   }) {
@@ -51,7 +47,6 @@ class UtageTheme extends AppTheme {
       idVal: themeId,
       lightColor: light ?? this.light,
       basicColor: basic ?? this.basic,
-      darkColor: dark ?? this.dark,
       subtitleColorVal: subtitleColor ?? this.subtitleColor,
       dotColorVal: dotColor ?? this.dotColor,
       baseTheme: this,
